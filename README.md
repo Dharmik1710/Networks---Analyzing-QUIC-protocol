@@ -5,12 +5,12 @@ Reproducing the results from paper "Evaluating QUIC Performance Over Web, Cloud 
 # TO-DO List
 
 ## Team Members
-- **Member 1**: [Name]
-- **Member 2**: [Name]
-- **Member 3**: [Name]
-- **Member 4**: [Name]
-- **Member 5**: [Name]
-- **Member 6**: [Name]
+- **Member 1**: Dharmik Patel
+- **Member 2**: Ajinkya Narwarkar
+- **Member 3**: Nishtha Aggarwal
+- **Member 4**: Jevin Modi
+- **Member 5**: Soham Sharma
+- **Member 6**: Arnav Gupta
 
 ---
 
