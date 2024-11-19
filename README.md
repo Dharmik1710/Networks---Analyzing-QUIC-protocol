@@ -97,9 +97,9 @@ This project aims to reproduce the results from *Evaluating QUIC Performance Ove
 
 Github reference link - https://github.com/gongzhenmu/Quic-performance-test
 
-Generate public and private key pair - ssh-keygen -t rsa -b 2048. Will be stored in /.ssh folder.  
+Generate public and private key pair: ssh-keygen -t rsa -b 2048. Will be stored in /.ssh folder.  
 
-Get into EC2 - ssh -i "~/.ssh/id_rsa" ubuntu@35.153.241.15. Add private key in double quotes
+Get into EC2: ssh -i "~/.ssh/id_rsa" ubuntu@35.153.241.159. Add private key in double quotes
 
 
  
