@@ -1,37 +1,75 @@
+import os
 import re
+import csv
+from collections import defaultdict
 
-log_file = 'data/Webtimestamp.log'
-# For QUIC
-# result_file = 'data/quicWebResult.log'
-# For TCP
-result_file = 'data/tcpWebResult.log'
+# Define paths for TCP and QUIC logs and result files
+data_directory = "data"
+tcp_log_file = os.path.join(data_directory, "WebtimestampTcp.log")
+quic_log_file = os.path.join(data_directory, "WebtimestampQuic.log")
+tcp_result_file = os.path.join(data_directory, "tcpWebResult.log")
+quic_result_file = os.path.join(data_directory, "quicWebResult.log")
 
-# Data storage for averages
-times = {}
+# Function to parse log files and calculate averages per website
+def calculate_per_website_averages(log_file):
+    website_data = defaultdict(lambda: {"connection_times": [], "ttfbs": [], "total_download_times": []})
 
-# Parse the log file
-with open(log_file, 'r') as file:
-    for line in file:
-        match = re.match(r"(.*) : Connection Time=(\d+)ms, TTFB=(\d+\.\d+)ms, Total Download Time=(\d+\.\d+)ms", line)
-        if match:
-            website, conn_time, ttfb, total_time = match.groups()
-            conn_time, ttfb, total_time = int(conn_time), float(ttfb), float(total_time)
-            
-            if website not in times:
-                times[website] = {"conn_time": [], "ttfb": [], "total_time": []}
-                
-            times[website]["conn_time"].append(conn_time)
-            times[website]["ttfb"].append(ttfb)
-            times[website]["total_time"].append(total_time)
+    # Verify if the log file exists
+    if not os.path.exists(log_file):
+        print(f"Log file {log_file} not found.")
+        return None
 
-# Calculate averages and write to result file
-with open(result_file, 'w') as result:
-    result.write("Website,AvgConnectionTime(ms),AvgTTFB(ms),AvgTotalDownloadTime(ms)\n")
-    for website, metrics in times.items():
-        avg_conn_time = sum(metrics["conn_time"]) / len(metrics["conn_time"])
-        avg_ttfb = sum(metrics["ttfb"]) / len(metrics["ttfb"])
-        avg_total_time = sum(metrics["total_time"]) / len(metrics["total_time"])
-        
-        result.write(f"{website},{avg_conn_time:.2f},{avg_ttfb:.2f},{avg_total_time:.2f}\n")
+    # Read the log file and extract metrics
+    with open(log_file, 'r') as file:
+        for line in file:
+            # Extract metrics using regex
+            match = re.search(
+                    r"^(www\.\S+) : Connection Time=(\d+) ms, TTFB=(\d+) ms, Total Download Time=(\d+) ms", line
+            )
 
-print("Averages have been calculated and written to", result_file)
+            if match:
+                website = match.group(1)
+                connection_time = int(match.group(2))
+                ttfb = float(match.group(3))
+                total_download_time = float(match.group(4))
+
+                website_data[website]["connection_times"].append(connection_time)
+                website_data[website]["ttfbs"].append(ttfb)
+                website_data[website]["total_download_times"].append(total_download_time)
+
+    # Calculate averages per website
+    averages = {}
+    for website, metrics in website_data.items():
+        avg_connection_time = sum(metrics["connection_times"]) / len(metrics["connection_times"]) if metrics["connection_times"] else 0.0
+        avg_ttfb = sum(metrics["ttfbs"]) / len(metrics["ttfbs"]) if metrics["ttfbs"] else 0.0
+        avg_total_download_time = sum(metrics["total_download_times"]) / len(metrics["total_download_times"]) if metrics["total_download_times"] else 0.0
+        averages[website] = (avg_connection_time, avg_ttfb, avg_total_download_time)
+
+    return averages
+
+# Function to write results to a CSV file
+def write_results_to_file(results, result_file):
+    # Write header and data
+    with open(result_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Website", "AvgConnectionTime(ms)", "AvgTTFB(ms)", "AvgTotalDownloadTime(ms)"])
+        for website, metrics in results.items():
+            writer.writerow([website, f"{metrics[0]:.2f}", f"{metrics[1]:.2f}", f"{metrics[2]:.2f}"])
+
+# Process both TCP and QUIC logs
+def process_logs():
+    print("Processing TCP log...")
+    tcp_averages = calculate_per_website_averages(tcp_log_file)
+    if tcp_averages:
+        write_results_to_file(tcp_averages, tcp_result_file)
+        print(f"TCP results written to {tcp_result_file}")
+
+    print("Processing QUIC log...")
+    quic_averages = calculate_per_website_averages(quic_log_file)
+    if quic_averages:
+        write_results_to_file(quic_averages, quic_result_file)
+        print(f"QUIC results written to {quic_result_file}")
+
+# Run the processing
+if __name__ == "__main__":
+    process_logs()

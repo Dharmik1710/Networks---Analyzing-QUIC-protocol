@@ -4,7 +4,7 @@ import os
 
 iterations = 5
 website_file = 'config/websites.txt'
-log_file = 'data/Webtimestamp.log'
+log_file = 'data/WebtimestampQuic.log'
 
 # Clear the log file at the start of each run
 if os.path.exists(log_file):
