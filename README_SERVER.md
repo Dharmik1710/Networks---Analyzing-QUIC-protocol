@@ -1,5 +1,41 @@
-This is as of Nov 11, 2024.   
+## Need to Edit Document before submitting final  
+
+This is as of Nov 20, 2024.   
 Will move to docker images for caddy and nodejs application in future
+Tested using curl on Nov 20, 2024.   
+Web workloads - passing 
+
+**Description**  
+This serves the purpose of testing web workloads on http2(TCP) and http3 (QUIC) for further analysis.  
+
+We have a Caddy web server that listens for https traffic on port 443 and proxies the request to nodejs application running port 8000. Caddy has built in support for http3. It also uses self signed certificates for https local testing. We will be using self signed certificates.  
+
+Curl with http3 can be used in two ways-
+- Installed locally
+- Docker   
+  
+Remove "--http3" flag to test TCP.
+
+
+**For testing**
+```
+$ caddy run
+$ cd cs536_jm/server
+$ npm start
+
+$ curl -I --http3 https://localhost
+OR
+$ docker run -ti --network host --rm alpine/curl-http3 curl --insecure --http3 -I https://localhost  
+
+$ curl -I --http3 https://localhost/files  
+OR
+$ docker run -ti --network host --rm alpine/curl-http3 curl --insecure --http3 -I https://localhost/files 
+
+```
+
+---
+
+### Developer Notes
 
 **Install Caddy**
 ```
