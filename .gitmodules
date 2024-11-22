@@ -1,0 +1,3 @@
+[submodule "cfg/containernet"]
+	path = cfg/containernet
+	url = https://github.com/containernet/containernet.git
