@@ -6,10 +6,11 @@ outputFile="data/WebtimestampQuic.log"
 # Start time in nanoseconds
 startTime=$(date +%s%N)
 
-# Run QUIC client and capture output
-output=$(depot_tools/src/out/Debug/quic_client --host=$webName --port=443 --allow_unknown_root_cert --disable_certificate_verification 2>&1)
+# Run curl with HTTP/3 and capture output
+output=$(curl --http3 -w "@curl-format.txt" -o /dev/null -s -k https://$webName)
+
 if [[ $? -ne 0 ]]; then
-  echo "Error: QUIC client failed for $webName" >> "$outputFile"
+  echo "Error: curl failed for $webName" >> "$outputFile"
   exit 1
 fi
 
@@ -19,16 +20,17 @@ endTime=$(date +%s%N)
 # Calculate Connection Time in milliseconds
 connectionTime=$(( (endTime - startTime) / 1000000 ))
 
-# Parse TTFB (convert to integer milliseconds)
-ttfb=$(echo "$output" | grep -oP 'First Byte: \K\d+(\.\d+)?')
+# Parse TTFB (Time to First Byte) and Total Download Time from curl output
+ttfb=$(echo "$output" | grep -oP 'time_starttransfer: \K\d+(\.\d+)?')
+download_time=$(echo "$output" | grep -oP 'time_total: \K\d+(\.\d+)?')
+
+# Convert to integer milliseconds
 if [[ -z "$ttfb" ]]; then
   ttfb=0
 else
   ttfb=$(printf "%.0f" "$(echo "$ttfb" | awk '{print $1 * 1000}')")
 fi
 
-# Parse Total Download Time (convert to integer milliseconds)
-download_time=$(echo "$output" | grep -oP 'Download Complete: \K\d+(\.\d+)?')
 if [[ -z "$download_time" ]]; then
   download_time=0
 else

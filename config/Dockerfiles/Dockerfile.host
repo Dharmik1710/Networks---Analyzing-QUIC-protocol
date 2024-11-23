@@ -1,0 +1,61 @@
+FROM ubuntu:20.04
+
+# Install necessary tools and dependencies
+RUN apt-get update && apt-get install -y \
+    iproute2 \
+    iputils-ping \
+    net-tools \
+    tcpdump \
+    wget \
+    telnet \
+    iperf3 \
+    netcat \
+    gnupg \
+    python3 \
+    python3-pip \
+    build-essential \
+    libssl-dev \
+    cmake \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Build and install libnghttp3
+RUN git clone https://github.com/ngtcp2/nghttp3.git && \
+    cd nghttp3 && \
+    git submodule update --init && \
+    cmake . && \
+    make && make install && \
+    cd .. && rm -rf nghttp3
+
+# Build and install libngtcp2
+RUN git clone https://github.com/ngtcp2/ngtcp2.git && \
+    cd ngtcp2 && \
+    git submodule update --init && \
+    cmake . && \
+    make && make install && \
+    cd .. && rm -rf ngtcp2
+
+# Install curl with HTTP/3 support
+RUN curl -LO https://curl.se/download/curl-8.5.0.tar.gz && \
+    tar -xvf curl-8.5.0.tar.gz && \
+    cd curl-8.5.0 && \
+    ./configure --with-nghttp3 --with-ngtcp2 --with-ssl && \
+    make && make install && \
+    ldconfig && \
+    cd .. && rm -rf curl-8.5.0 curl-8.5.0.tar.gz
+
+# Install Python dependencies
+COPY requirements.txt /app/requirements.txt
+RUN pip3 install --no-cache-dir -r /app/requirements.txt
+
+# Set the working directory
+WORKDIR /app
+
+# Copy project files
+COPY . /app
+
+# Grant execution permissions for scripts
+RUN chmod +x tcpWebTestIndividual.sh quicWebTestIndividual.sh averageTime.py
+
+# Default command to open a bash shell
+CMD ["bash"]
