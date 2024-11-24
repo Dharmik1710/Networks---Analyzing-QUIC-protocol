@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  reverse-proxy:
+    build:
+      context: ./caddy
+    ports:
+      - "443:443" # Expose HTTPS traffic
+    depends_on:
+      - web-service
+      - video-service
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+
+  web-service:
+    build:
+      context: ./web-service
+    expose:
+      - "8000" # Expose port for internal communication
+
+  video-service:
+    build:
+      context: ./video-service
+    expose:
+      - "9000" # Expose port for internal communication
