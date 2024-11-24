@@ -50,11 +50,12 @@ This will start the web-service on port 8000, the video-service on port 9000, an
 
 After running `docker-compose up`, you can access the services as follows:
 
-- **Web Service:** [https://localhost](https://localhost) (This will return the main web page or "Hello World!")
+- **Web Service:** [https://localhost/web/index.html](https://localhost/web/index.html) (This will return the main web page or "Hello World!")
+- **Web Service Files:** [https://localhost/web/files](https://localhost/web/files) (This will return web files")
 - **Video Service:** [https://localhost/video/:filename](https://localhost/video/:filename) (Replace `:filename` with a valid video filename to fetch a video)
 - **Video Stream:** [https://localhost/video/stream/:filename](https://localhost/video/stream/:filename) (Streams the video content)
 
-## Caddy Configuration in Docker
+### Caddy Configuration in Docker
 
 The Caddy server in this setup is configured to handle the following:
 
@@ -62,7 +63,7 @@ The Caddy server in this setup is configured to handle the following:
 - HTTPS via self-signed certificates for local testing.
 - Reverse Proxy for routing requests to web-service on port 8000 and video-service on port 9000.
 
-## Caddyfile:
+### Caddyfile:
 Caddy uses a Caddyfile to configure its reverse proxy behavior. Here's how it's set up:
 
 ```bash
@@ -76,10 +77,10 @@ localhost:443 {
     }
 
     # Reverse proxy requests to the web-service on localhost:8000
-    reverse_proxy / localhost:8000
+    reverse_proxy /web* web-service:8000
 
     # Reverse proxy requests to the video-service on localhost:9000
-    reverse_proxy /video/* localhost:9000
+    reverse_proxy /video* video-service:9000
 }
 ```
 
@@ -87,10 +88,10 @@ localhost:443 {
 - Protocol header: Caddy sets the X-HTTPS-Version header to indicate the protocol version being used (HTTP/1.1, HTTP/2, or HTTP/3).
 - Reverse Proxy: Requests to the root (/) are proxied to the web-service, and requests starting with /video/ are proxied to the video-service.
 
-## Sending Requests (Testing with curl)
+### Sending Requests (Testing with curl)
 You can use curl to test the HTTP/2 (TCP) and HTTP/3 (QUIC) functionality.
 
-### For HTTP/3 (QUIC) Requests:
+#### For HTTP/3 (QUIC) Requests:
 Use the --http3 flag with curl to test the video and web services:
 
 ```bash
@@ -104,7 +105,7 @@ curl -I --http3 https://localhost/video/your-video.mp4
 curl -I --http3 https://localhost/video/stream/your-video.mp4
 ```
 
-### For HTTP/2 (TCP) Requests:
+#### For HTTP/2 (TCP) Requests:
 To test HTTP/2 (TCP), just omit the --http3 flag:
 
 ```bash
@@ -115,12 +116,12 @@ curl -I https://localhost
 curl -I https://localhost/video/your-video.mp4
 ```
 
-### For Dockerized curl with HTTP/3:
+#### For Dockerized curl with HTTP/3:
 Alternatively, you can run curl inside a Docker container that supports HTTP/3:
 
 ```bash
 # Test the web service with HTTP/3 in Docker
-docker run -ti --network host --rm alpine/curl-http3 curl --insecure --http3 -I https://localhost
+docker run -ti --network host --rm alpine/curl-http3 curl --insecure --http3 -I https://localhost/web/index.html
 
 # Test the video service with HTTP/3 in Docker
 docker run -ti --network host --rm alpine/curl-http3 curl --insecure --http3 -I https://localhost/video/your-video.mp4
