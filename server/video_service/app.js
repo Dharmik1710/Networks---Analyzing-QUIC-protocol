@@ -1,22 +1,28 @@
 const express = require("express");
-const app = express();
+const fs = require("fs");
 const path = require("path");
+const app = express();
 const port = 9000;
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, "public")));
 
-// Route for serving video content
+// Route for serving video content (optional)
 app.get("/video", (req, res) => {
   res.send("Video service is running!");
 });
 
-// Another example route for serving video files
+// Route for serving a video file
 app.get("/video/:filename", (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(__dirname, "public", filename);
 
-  // If the file exists, serve it; otherwise, send a 404 error
+  // Security check for path traversal
+  if (!filePath.startsWith(path.join(__dirname, "public"))) {
+    return res.status(400).send("Invalid file path.");
+  }
+
+  // Serve the video file (default response)
   res.sendFile(filePath, (err) => {
     if (err) {
       res.status(404).send("Video not found!");
@@ -24,11 +30,8 @@ app.get("/video/:filename", (req, res) => {
   });
 });
 
-// Example route for streaming video (optional)
+// Route for streaming video content
 app.get("/video/stream/:filename", (req, res) => {
-  
-  const fs = require("fs");
-  const stat = require("fs").statSync;
   const filename = req.params.filename;
   const filePath = path.join(__dirname, "public", filename);
 
