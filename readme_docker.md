@@ -51,7 +51,7 @@ This will start the web-service on port 8000, the video-service on port 9000, an
 After running `docker-compose up`, you can access the services as follows:
 
 - **Web Service:** [https://localhost/web/index.html](https://localhost/web/index.html) (This will return the main web page or "Hello World!")
-- **Web Service Files:** [https://localhost/web/files](https://localhost/web/files) (This will return web files")
+- **Web Service Files:** [https://localhost/web/files](https://localhost/web/files) (This will return web files)
 - **Video Service:** [https://localhost/video/:filename](https://localhost/video/:filename) (Replace `:filename` with a valid video filename to fetch a video)
 - **Video Stream:** [https://localhost/video/stream/:filename](https://localhost/video/stream/:filename) (Streams the video content)
 
@@ -86,7 +86,7 @@ localhost:443 {
 
 - TLS: Caddy will use self-signed certificates for local testing, automatically enabling HTTPS.
 - Protocol header: Caddy sets the X-HTTPS-Version header to indicate the protocol version being used (HTTP/1.1, HTTP/2, or HTTP/3).
-- Reverse Proxy: Requests to the root (/) are proxied to the web-service, and requests starting with /video/ are proxied to the video-service.
+- Reverse Proxy: Requests to the root (/web/) are proxied to the web-service, and requests starting with /video/ are proxied to the video-service.
 
 ### Sending Requests (Testing with curl)
 You can use curl to test the HTTP/2 (TCP) and HTTP/3 (QUIC) functionality.
