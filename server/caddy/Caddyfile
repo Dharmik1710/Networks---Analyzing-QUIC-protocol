@@ -5,6 +5,6 @@ localhost:443 {
         X-HTTPS-Version "{http.request.proto}"
     }
 
-    reverse_proxy /web* web-service:8000
-    reverse_proxy /video* video-service:9000
+    reverse_proxy /web* localhost:8000
+    reverse_proxy /video* localhost:9000
 }
