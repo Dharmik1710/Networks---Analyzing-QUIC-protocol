@@ -8,9 +8,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/", (req, res) => {
-  console.log("Recevied request for '/' route \n")
-  res.send("Hello World!");
+// Route for serving video content (optional)
+app.get("/web", (req, res) => {
+  res.send("Web service is running!");
 });
 
 app.use(express.static(path.join(__dirname, "public")));
