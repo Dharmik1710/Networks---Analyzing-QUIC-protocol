@@ -1,0 +1,10 @@
+localhost:443 {
+    tls internal
+
+    header {
+        X-HTTPS-Version "{http.request.proto}"
+    }
+
+    reverse_proxy /web* web-service:8000
+    reverse_proxy /video* video-service:9000
+}
