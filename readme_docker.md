@@ -21,27 +21,11 @@ git clone <repository-url>
 cd <repository-directory>
 ```
 
-## 2. Build the Docker Images
-
-To build the Docker images for both the web-service and video-service, run the following commands:
-
-### For web-service:
-
-```bash
-docker build -t web-service ./web-service
-```
-
-### For video-service::
-
-```bash
-docker build -t video-service ./video-service
-```
-
-## 3. Start the Services with Docker Compose
+## 2. Build and Start the Services with Docker Compose
 Once the images are built, you can use Docker Compose to start all the services (web-service, video-service, and Caddy) together. Simply run:
 
 ```bash
-docker-compose up
+docker-compose up --build
 ```
 
 This will start the web-service on port 8000, the video-service on port 9000, and Caddy on port 443.
@@ -49,6 +33,14 @@ This will start the web-service on port 8000, the video-service on port 9000, an
 ## 4. Access the Services
 
 After running `docker-compose up`, you can access the services as follows:
+
+```bash
+# Test the web service (returns HTML content or "Hello World!")
+curl http://localhost:8000/web/<optional-element>
+
+# Test the video service (retrieves a specific video)
+curl http://localhost:9000/video/<optional-element>
+```
 
 - **Web Service:** [https://localhost/web/index.html](https://localhost/web/index.html) (This will return the main web page or "Hello World!")
 - **Web Service Files:** [https://localhost/web/files](https://localhost/web/files) (This will return web files)
@@ -96,13 +88,13 @@ Use the --http3 flag with curl to test the video and web services:
 
 ```bash
 # Test the web service (returns HTML content or "Hello World!")
-curl -I --http3 https://localhost
+curl -I -k --http3 https://localhost/web/<optional-element>
 
 # Test the video service (retrieves a specific video)
-curl -I --http3 https://localhost/video/your-video.mp4
+curl -I -k --http3 https://localhost/video/<optional-element.mp4>
 
 # Test video streaming
-curl -I --http3 https://localhost/video/stream/your-video.mp4
+curl -I -k --http3 https://localhost/video/stream/<optional-element.mp4>
 ```
 
 #### For HTTP/2 (TCP) Requests:
@@ -110,10 +102,10 @@ To test HTTP/2 (TCP), just omit the --http3 flag:
 
 ```bash
 # Test the web service with HTTP/2
-curl -I https://localhost
+curl -I -k https://localhost/web/<optional-element>
 
 # Test the video service with HTTP/2
-curl -I https://localhost/video/your-video.mp4
+curl -I -k https://localhost/video/<optional-element.mp4>
 ```
 
 #### For Dockerized curl with HTTP/3:
@@ -133,11 +125,22 @@ Both the web-service and video-service are running in their own Docker container
 Dockerfile: Each service has its own Dockerfile that sets up the necessary environment and dependencies.
 Docker Compose: The docker-compose.yml file orchestrates the containers, setting up networks and linking services together.
 
-### Docker Compose Command:
+### Useful Troubleshoot Commands:
 To start the services, just run:
 
 ```bash
 docker-compose up
+docker images
+docker logs <continer-id>
+docker ps
+docker-compose restart <service-name>
+
+# When you encounter service build issues due to existing processes
+sudo lsof -i :<PID>
+sudo kill <PID>
+
+
+
 ```
 This will automatically build and run all the containers.
 
