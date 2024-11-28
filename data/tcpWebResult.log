@@ -1,0 +1,7 @@
+Website,AvgConnectionTime(ms),AvgTTFB(ms),AvgTotalDownloadTime(ms)
+www.google.com,93.20,82.60,82.80
+www.facebook.com,113.00,103.40,103.60
+www.amazon.com,64.60,54.40,54.80
+www.wikipedia.org,50.40,37.80,40.80
+www.reddit.com,130.00,108.80,119.40
+www.purdue.edu,326.60,151.20,316.60
