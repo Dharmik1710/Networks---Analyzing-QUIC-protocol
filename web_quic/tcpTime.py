@@ -1,4 +1,5 @@
 import pyshark
+import csv
 
 
 def analyze_tcp_time(file_path):
@@ -120,26 +121,51 @@ def analyze_tcp_time(file_path):
     return results
 
 
-def write_results_to_log(results, log_file="TCP_log.txt"):
-    # Open the log file in write mode (creates or overwrites the file)
-    with open(log_file, "a") as log:
-        # log.write(f"Analysis Results for {file_path}:\n")
-        log.write(f"TCP Connection Time: {results['tcp_connection_time']} seconds\n")
-        log.write(f"TLS Connection Time: {results['tls_connection_time']} seconds\n")
-        log.write(
-            f"Total Connection Time: {results['total_connection_time']} seconds\n"
+def write_results_to_csv(results, csv_file="TCP_log.csv"):
+    # Check if the CSV file exists to determine if we need to write headers
+    file_exists = False
+    try:
+        with open(csv_file, "r"):
+            file_exists = True
+    except FileNotFoundError:
+        file_exists = False
+
+    # Open the CSV file in append mode
+    with open(csv_file, "a", newline="") as csvfile:
+        csv_writer = csv.writer(csvfile)
+
+        # If the file doesn't exist, write the headers
+        if not file_exists:
+            csv_writer.writerow(
+                [
+                    "TCP Connection Time",
+                    "TLS Connection Time",
+                    "Total Connection Time",
+                    "Time to First Byte",
+                    "Download Time",
+                    "Total Time",
+                ]
+            )
+
+        # Write the results to the CSV file
+        csv_writer.writerow(
+            [
+                results["tcp_connection_time"],
+                results["tls_connection_time"],
+                results["total_connection_time"],
+                results["time_to_first_byte"],
+                results["download_time"],
+                results["total_time"],
+            ]
         )
-        log.write(f"Time to First Byte: {results['time_to_first_byte']} seconds\n")
-        log.write(f"Download Time: {results['download_time']} seconds\n")
-        log.write(f"Total Time: {results['total_time']} seconds\n")
-        log.write(" \n")
-    print(f"Results have been written to {log_file}")
+
+    print(f"Results have been written to {csv_file}")
 
 
 # Example usage
 file_path = "output_nginx_tcp.pcap"
 results = analyze_tcp_time(file_path)
-write_results_to_log(results)
+write_results_to_csv(results)
 
 print("Analysis Results:")
 print(f"TCP Connection Time: {results['tcp_connection_time']} seconds")
