@@ -1,0 +1,26 @@
+# The Caddyfile is an easy way to configure your Caddy web server.
+#
+# Unless the file starts with a global options block, the first
+# uncommented line is always the address of your site.
+#
+# To use your own domain name (with automatic HTTPS), first make
+# sure your domain's A/AAAA DNS records are properly pointed to
+# this machine's public IP, then replace ":80" below with your
+# domain name.
+
+localhost:443 {
+    # Enable TLS for localhost (Caddy will automatically use self-signed certs for localhost)
+    tls internal
+
+    # Set the custom header based on the request protocol version (HTTP/1.1, HTTP/2, HTTP/3)
+    header {
+        X-HTTPS-Version "{http.request.proto}"
+    }
+
+    # Reverse proxy requests to your Node.js backend on localhost:8000
+    reverse_proxy localhost:8000
+}
+
+
+# Refer to the Caddy docs for more information:
+# https://caddyserver.com/docs/caddyfile
