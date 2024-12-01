@@ -1,0 +1,14 @@
+TCP Connection Time: 0:00:00.094593 seconds
+TLS Connection Time: 0:00:00.095058 seconds
+Total Connection Time: 0:00:00.206108 seconds
+Time to First Byte: 0:00:00.206120 seconds
+Download Time: 0:00:00.097451 seconds
+Total Time: 0.396919000 seconds
+ 
+TCP Connection Time: 0:00:00.094593 seconds
+TLS Connection Time: 0:00:00.095058 seconds
+Total Connection Time: 0:00:00.206108 seconds
+Time to First Byte: 0:00:00.206120 seconds
+Download Time: 0:00:00.097451 seconds
+Total Time: 0.396919000 seconds
+ 
