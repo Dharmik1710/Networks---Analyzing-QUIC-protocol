@@ -1,9 +1,10 @@
 import pyshark
 import csv
 import sys
+import os
 
 
-def analyze_tcp_time(file_path):
+def analyze_tcp_time(filepath):
     """
     Analyze the TCP connection times and TLS handshake times from a PCAP file.
 
@@ -14,7 +15,7 @@ def analyze_tcp_time(file_path):
         dict: Dictionary containing connection and handshake times.
     """
     # Load the PCAP file with a TCP filter
-    cap = pyshark.FileCapture(file_path, display_filter="tcp")
+    cap = pyshark.FileCapture(filepath, display_filter="tcp")
 
     # Initialize variables
     connection_SYN_time = None
@@ -103,11 +104,17 @@ def analyze_tcp_time(file_path):
     finally:
         cap.close()
 
-    tcp_connection_time = connection_ACK_time - connection_SYN_time
-    tls_connection_time = tls_end_time - tls_start_time
-    time_to_first_byte = download_start_time - connection_SYN_time
-    download_time = download_end_time - download_start_time
-    total_connection_time = tls_end_time - connection_SYN_time
+    # Safely calculate times
+    if connection_SYN_time and connection_ACK_time:
+        tcp_connection_time = (connection_ACK_time - connection_SYN_time).total_seconds()
+    else:
+        tcp_connection_time = None
+
+    tls_connection_time = (tls_end_time - tls_start_time).total_seconds() if tls_start_time and tls_end_time else None
+    time_to_first_byte = (download_start_time - connection_SYN_time).total_seconds() if connection_SYN_time and download_start_time else None
+    download_time = (download_end_time - download_start_time).total_seconds() if download_start_time and download_end_time else None
+    total_connection_time = (tls_end_time - connection_SYN_time).total_seconds() if tls_end_time and connection_SYN_time else None
+
 
     # Calculate times
     results = {
@@ -122,15 +129,13 @@ def analyze_tcp_time(file_path):
     return results
 
 
-def write_results_to_csv(results, filename):
-    csv_file=f"assets/csvs/tcp_log_{filename}.csv"
+def write_results_to_csv(results, filepath):
+    base_filename = os.path.splitext(os.path.basename(filepath))[0]
+    csv_file = f"assets/csvs/tcp_log_{base_filename}.csv"
+    path = os.path.dirname(csv_file)
+    os.makedirs(path, exist_ok=True)
     # Check if the CSV file exists to determine if we need to write headers
-    file_exists = False
-    try:
-        with open(csv_file, "r"):
-            file_exists = True
-    except FileNotFoundError:
-        file_exists = False
+    file_exists = os.path.exists(csv_file)
 
     # Open the CSV file in append mode
     with open(csv_file, "a", newline="") as csvfile:
@@ -171,9 +176,9 @@ def main():
         sys.exit(1)
 
     # Get the file name from the command-line arguments
-    file_name = sys.argv[1]
-    results = analyze_tcp_time(file_name)
-    write_results_to_csv(results, file_name)
+    filepath = sys.argv[1]
+    results = analyze_tcp_time(filepath)
+    write_results_to_csv(results, filepath)
 
     print("Analysis Results:")
     print(f"TCP Connection Time: {results['tcp_connection_time']} seconds")

@@ -10,11 +10,12 @@
 import pyshark
 import csv
 import sys
+import os
 
 # Load the PCAP file
-def analyze_quic_time(pcap_file):
+def analyze_quic_time(filepath):
 
-    cap = pyshark.FileCapture(pcap_file, display_filter="quic")
+    cap = pyshark.FileCapture(filepath, display_filter="quic")
 
     # Initialize variables to store timings
     first_initial = None
@@ -72,16 +73,15 @@ def analyze_quic_time(pcap_file):
 
 def write_metrics_to_csv(
     results,
-    filename
+    filepath
 ):
-    csv_file = f"assets/csvs/quic_log_{filename}.csv"
+    base_filename = os.path.splitext(os.path.basename(filepath))[0]
+    csv_file = f"assets/csvs/quic_log_{base_filename}.csv"
+    path = os.path.dirname(csv_file)
+    os.makedirs(path, exist_ok=True)
+    
     # Check if the CSV file exists to determine if we need to write headers
-    file_exists = False
-    try:
-        with open(csv_file, "r"):
-            file_exists = True
-    except FileNotFoundError:
-        file_exists = False
+    file_exists = os.path.exists(csv_file)
 
     # Open the CSV file in append mode
     with open(csv_file, "a", newline="") as csvfile:
@@ -115,9 +115,9 @@ def main():
     if len(sys.argv) != 2:
         print("Usage: python your_script.py <file_name>")
         sys.exit(1)
-    filename = sys.argv[1]
-    results = analyze_quic_time(filename)
-    write_metrics_to_csv(results, filename)
+    filepath = sys.argv[1]
+    results = analyze_quic_time(filepath)
+    write_metrics_to_csv(results, filepath)
 
 
 if __name__ == "__main__":
