@@ -1,0 +1,20 @@
+{
+  "name": "video-service",
+  "version": "1.0.0",
+  "description": "A service to handle video requests",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "author": "Ajinkya Nawarkar",
+  "license": "MIT"
+  }
+
