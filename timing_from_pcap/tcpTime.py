@@ -1,5 +1,6 @@
 import pyshark
 import csv
+import sys
 
 
 def analyze_tcp_time(file_path):
@@ -163,16 +164,26 @@ def write_results_to_csv(results, csv_file="TCP_log.csv"):
 
 
 # Example usage
-file_path = "output_nginx_tcp.pcap"
-results = analyze_tcp_time(file_path)
-write_results_to_csv(results)
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python your_script.py <file_name>")
+        sys.exit(1)
 
-print("Analysis Results:")
-print(f"TCP Connection Time: {results['tcp_connection_time']} seconds")
-print(f"TLS Connection Time: {results['tls_connection_time']} seconds")
-print(f"Total Connection Time: {results['total_connection_time']} seconds")
-print(f"Time to First Byte: {results['time_to_first_byte']} seconds")
-print(f"Download Time: {results['download_time']} seconds")
-print(f"Total Time: {results['total_time']} seconds")
+    # Get the file name from the command-line arguments
+    file_name = sys.argv[1]
+    # file_path = "output_nginx_tcp.pcap"
+    results = analyze_tcp_time(file_name)
+    write_results_to_csv(results)
 
-# write_results_to_log(results)
+    print("Analysis Results:")
+    print(f"TCP Connection Time: {results['tcp_connection_time']} seconds")
+    print(f"TLS Connection Time: {results['tls_connection_time']} seconds")
+    print(f"Total Connection Time: {results['total_connection_time']} seconds")
+    print(f"Time to First Byte: {results['time_to_first_byte']} seconds")
+    print(f"Download Time: {results['download_time']} seconds")
+    print(f"Total Time: {results['total_time']} seconds")
+
+if __name__ == "__main__":
+    main()
+
+
