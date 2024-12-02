@@ -1,0 +1,16 @@
+Workload: web
+Time to First Byte: 0.016264s
+Connection Time: 0.013541s
+Total Time: 0.016310s
+Workload: web
+Time to First Byte: 0.016489s
+Connection Time: 0.013782s
+Total Time: 0.016536s
+Workload: video
+Time to First Byte: 0.018871s
+Connection Time: 0.015197s
+Total Time: 0.018923s
+Workload: video
+Time to First Byte: 0.019086s
+Connection Time: 0.015413s
+Total Time: 0.019173s

@@ -15,6 +15,22 @@ app.get("/web", (req, res) => {
 
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get('/web/:filename', (req, res) => {
+  const fileName = req.params.filename;
+  const filePath = path.join(__dirname, 'public', fileName);
+
+  // Security check for path traversal
+  if (!filePath.startsWith(path.join(__dirname, 'public'))) {
+    return res.status(400).send('Invalid file path.');
+  }
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      return res.status(404).send('File not found!');
+    }
+  });
+});
+
 app.get("/files", (req, res) => {
   console.log("Received request for '/files' route \n")
   
