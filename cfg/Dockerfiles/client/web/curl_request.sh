@@ -49,7 +49,7 @@
 iterations=5
 
 # TCPDump capture options
-interface="enX0"    # Adjust to the correct network interface
+# interface="eth0"    # Adjust to the correct network interface
 
 # Loop to repeat the process 100 times
 for ((i=1; i<=iterations; i++))
@@ -62,7 +62,7 @@ do
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
   # Start tcpdump in the background to capture packets to the pcap file
-  sudo tcpdump -i "$interface" port "$available_port" -w "$capture_file" &
+  tcpdump -i any port "$available_port" -w "$capture_file" &
   tcpdump_pid=$!
   echo "tcpdump pid: $tcpdump_pid"
   echo "available port: $available_port"
@@ -70,13 +70,13 @@ do
   sleep 2
 
   # Send the curl request (QUIC)
-  curl -I --insecure --http3 --local-port $available_port "https://quic.nginx.org/"  >> /CURL_logs/QUIC_WEB_logs.txt 2>&1
+  curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/web/index.html"  >> /CURL_logs/QUIC_WEB_logs.txt 2>&1
   
   # Wait for the curl request to complete
   sleep 5
   echo "After wait"
   # Stop tcpdump after the curl request completes
-  sudo kill -SIGINT $tcpdump_pid
+  kill -SIGINT $tcpdump_pid
   # wait $tcpdump_pid
 
   # Sleep time 10 seconds
@@ -94,7 +94,7 @@ do
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
   # Start tcpdump in the background to capture packets to the pcap file
-  sudo tcpdump -i "$interface" port "$available_port" -w "$capture_file" &
+  tcpdump -i any port "$available_port" -w "$capture_file" &
   tcpdump_pid=$!
   echo "tcpdump pid: $tcpdump_pid"
   echo "available port: $available_port"
@@ -102,14 +102,14 @@ do
   sleep 2
 
   # Send the curl request (QUIC)
-  curl -I --insecure  --local-port $available_port "https://quic.nginx.org/"  >> /CURL_logs/TCP_WEB_logs.txt 2>&1
+  curl -I -v --insecure  --local-port $available_port "https://172.17.0.4:8443/web/index.html"  >> /CURL_logs/TCP_WEB_logs.txt 2>&1
   
 
   # Wait for the curl request to complete
   sleep 5
   echo "After wait "
   # Stop tcpdump after the curl request completes
-  sudo kill -SIGINT $tcpdump_pid
+  kill -SIGINT $tcpdump_pid
   # wait $tcpdump_pid
 
   # Sleep time 10 seconds

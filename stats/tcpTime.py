@@ -35,7 +35,7 @@ def analyze_tcp_time(filepath):
                 # Parse TCP SYN for connection start
                 if (
                     "TCP" in packet
-                    and packet.tcp.flags_syn == "1"
+                    and str(packet.tcp.flags_syn) == "1"
                     and connection_SYN_time is None
                 ):
                     connection_SYN_time = packet.sniff_time
@@ -43,7 +43,7 @@ def analyze_tcp_time(filepath):
                 # Parse TCP ACK for connection established
                 if (
                     "TCP" in packet
-                    and packet.tcp.flags_ack == "1"
+                    and str(packet.tcp.flags_ack) == "1"
                     and connection_SYN_time
                     and connection_ACK_time is None
                 ):
