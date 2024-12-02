@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  reverse-proxy:
+    build:
+      context: ./caddy
+    depends_on:
+      - web-service
+      - video-service
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    networks:
+      - server-internal-net
+
+  web-service:
+    build:
+      context: ./web_service
+    expose:
+      - "8000"
+    networks:
+      - server-internal-net
+
+  video-service:
+    build:
+      context: ./video_service
+    expose:
+      - "9000"
+    networks:
+      - server-internal-net
+
+networks:
+  server-internal-net:
+    driver: bridge
