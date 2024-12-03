@@ -138,7 +138,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Mininet Topology for TCP and QUIC Testing')
     parser.add_argument('--bw_client', type=float, default=20, help='Bandwidth for client network in Mbps')
     parser.add_argument('--latency_client', type=str, default='10ms', help='Latency for client network')
+    parser.add_argument('--region', type=str, choices=['India', 'Germany'], help='Region for client network settings')
+
     args = parser.parse_args()
+
+    if args.region:
+        if args.region == 'India':
+            args.bw_client = 10
+            args.latency_client = "200ms"
+        elif args.region == 'Germany':
+            args.bw_client = 50
+            args.latency_client = "20ms"
+    else: 
+        args.bw_client = 20
+        args.latency_client = "10ms"
+
 
     try:
         setup_network(bw_client=args.bw_client, latency_client=args.latency_client)

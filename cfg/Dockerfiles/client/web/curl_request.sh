@@ -43,10 +43,36 @@
 #     done
 # done
 
+
+
+
+
+
+
+
+
+
+
+
 #!/bin/bash
 
-# Number of iterations
+# Default number of iterations
 iterations=1
+
+# Default region
+region="default"
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --iterations) iterations="$2"; shift ;;
+        --region) region="$2"; shift ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+echo "Region: $region"
 
 # TCPDump capture options
 # interface="eth0"    # Adjust to the correct network interface
@@ -57,7 +83,7 @@ do
   echo "Iteration $i"
 
   # Define the capture file name with the iteration number
-  capture_file="/pcaps/web/quic/QUIC_WEB_capture$i_{content}_{latency__bandwidth}.pcap"
+  capture_file="/pcaps/web/quic/QUIC_WEB_capture_{content}__$i_${region}.pcap"
 
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
@@ -89,7 +115,7 @@ do
   echo "Iteration $i"
 
   # Define the capture file name with the iteration number
-  capture_file="/pcaps/web/tcp/TCP_WEB_capture$i.pcap"
+  capture_file="/pcaps/web/tcp/TCP_WEB_capture_{content}__$i_${region}.pcap"
 
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
@@ -126,7 +152,7 @@ for size in "${file_sizes[@]}"; do
   for ((i=1; i<=iterations; i++)); do
     echo "QUIC Video Workload - File milkyway${size}.mp4 - Iteration $i"
 
-    capture_file="/pcaps/video/quic/QUIC_VIDEO_capture_${size}_$i_{latency__bandwidth}.pcap"
+    capture_file="/pcaps/video/quic/QUIC_VIDEO_capture_${size}_$i_${region}.pcap"
 
     available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
@@ -158,7 +184,7 @@ for size in "${file_sizes[@]}"; do
     echo "TCP Video Workload - File milkyway${size}.mp4 - Iteration $i"
 
     # Define the capture file name with the iteration number
-    capture_file="/pcaps/video/tcp/TCP_VIDEO_capture_${size}_$i.pcap"
+    capture_file="/pcaps/video/tcp/TCP_VIDEO_capture_${size}_$i_${region}.pcap"
 
     available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
