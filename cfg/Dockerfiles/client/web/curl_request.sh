@@ -46,7 +46,7 @@
 #!/bin/bash
 
 # Number of iterations
-iterations=5
+iterations=1
 
 # TCPDump capture options
 # interface="eth0"    # Adjust to the correct network interface
@@ -57,7 +57,7 @@ do
   echo "Iteration $i"
 
   # Define the capture file name with the iteration number
-  capture_file="/QUIC_captures/QUIC_WEB_capture$i.pcap"
+  capture_file="/pcaps/web/quic/QUIC_WEB_capture$i.pcap"
 
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
@@ -89,7 +89,7 @@ do
   echo "Iteration $i"
 
   # Define the capture file name with the iteration number
-  capture_file="/TCP_captures/TCP_WEB_capture$i.pcap"
+  capture_file="/pcaps/web/tcp/TCP_WEB_capture$i.pcap"
 
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
