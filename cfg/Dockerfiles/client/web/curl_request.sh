@@ -119,7 +119,7 @@ done
 
 
 # File size array
-file_sizes=("1mb" "10mb" "100mb" "500mb")
+file_sizes=("1mb" "10mb" "50mb" "100mb")
 
 # QUIC Video Workload
 for size in "${file_sizes[@]}"; do
@@ -139,7 +139,7 @@ for size in "${file_sizes[@]}"; do
     sleep 2
 
     # Send the curl request (QUIC) for the video file
-    curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/video/milkyway1mb.mp4" >> /CURL_logs/QUIC_VIDEO_logs.txt 2>&1
+    curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.mp4" >> /CURL_logs/QUIC_VIDEO_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
@@ -171,7 +171,7 @@ for size in "${file_sizes[@]}"; do
     sleep 2
 
     # Send the curl request (TCP) for the video file
-    curl -I -v --insecure --local-port $available_port "https://172.17.0.4:8443/video/milkyway1mb.mp4" >> /CURL_logs/TCP_VIDEO_logs.txt 2>&1
+    curl -I -v --insecure --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.mp4" >> /CURL_logs/TCP_VIDEO_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
