@@ -1,11 +1,30 @@
 #!/usr/bin/env python
 import os
 
+import argparse
 from mininet.net import Containernet
 from mininet.node import Controller, Docker
 from mininet.link import TCLink
 from mininet.cli import CLI
 from mininet.log import setLogLevel, info
+import atexit
+import os
+
+# Global list to track created containers
+created_containers = []
+
+
+def track_container(container_name):
+    """Track the name of a container for cleanup."""
+    created_containers.append(container_name)
+
+
+def cleanup():
+    """Cleanup function to stop and remove only tracked containers."""
+    info("*** Cleaning up script-created containers and network...\n")
+    for container in created_containers:
+        os.system(f"docker rm -f {container} 2>/dev/null || true")
+    os.system("mn -c 2>/dev/null || true")
 
 
 def setup_network(bw_client=20, latency_client="10ms"):
@@ -22,8 +41,13 @@ def setup_network(bw_client=20, latency_client="10ms"):
     r1 = net.addHost("r1", ip="10.0.0.254")
 
     info("*** Adding clients\n")
+
+
     h1 = net.addDocker("h1", ip="10.0.0.1/24", dimage="host-web-image", volumes=[f"{os.getcwd()}/../stats/assets/pcaps:/pcaps:rw"], dcmd="/bin/bash curl_request.sh")
+    track_container("h1")
+    
     h2 = net.addDocker("h2", ip="10.0.0.2/24", dimage="host-image")
+    track_container("h2")
 
     info("*** Adding servers\n")
 
@@ -36,8 +60,13 @@ def setup_network(bw_client=20, latency_client="10ms"):
         port_bindings={443: 8443},
         dcmd="caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"
     )
+    track_container("srv1-proxy")
+
     srv1_web = net.addDocker("srv1-web", ip="192.168.1.2/24", dimage="web-server-image")
+    track_container("srv1-web")
+
     srv1_video = net.addDocker("srv1-video", ip="192.168.1.3/24", dimage="video-server-image")
+    track_container("srv1-video")
 
     # Server 2
     srv2_proxy = net.addDocker(
@@ -48,8 +77,13 @@ def setup_network(bw_client=20, latency_client="10ms"):
         port_bindings={443: 9443},
         dcmd="caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"
     )
+    track_container("srv2-proxy")
+
     srv2_web = net.addDocker("srv2-web", ip="192.168.2.2/24", dimage="web-server-image")
+    track_container("srv2-web")
+
     srv2_video = net.addDocker("srv2-video", ip="192.168.2.3/24", dimage="video-server-image")
+    track_container("srv2-video")
 
     info("*** Creating links\n")
 
@@ -79,7 +113,6 @@ def setup_network(bw_client=20, latency_client="10ms"):
     r1.cmd("sysctl -w net.ipv4.ip_forward=1")
     r1.cmd("ifconfig r1-eth0 10.0.0.254/24")
     r1.cmd("ifconfig r1-eth1 10.0.1.254/24")
-    # r1.cmd("ifconfig r1-eth1 10.0.2.254/24")
 
     info("*** Configuring routes\n")
     h1.cmd("ip route add default via 10.0.0.254")
@@ -96,4 +129,18 @@ def setup_network(bw_client=20, latency_client="10ms"):
 
 if __name__ == "__main__":
     setLogLevel("info")
-    setup_network()
+
+    # Register cleanup function to run on exit
+    atexit.register(cleanup)
+
+    parser = argparse.ArgumentParser(description='Mininet Topology for TCP and QUIC Testing')
+    parser.add_argument('--bw_client', type=float, default=20, help='Bandwidth for client network in Mbps')
+    parser.add_argument('--latency_client', type=str, default='10ms', help='Latency for client network')
+    args = parser.parse_args()
+
+    try:
+        setup_network(bw_client=args.bw_client, latency_client=args.latency_client)
+    except Exception as e:
+        info(f"*** Error: {e}\n")
+    finally:
+        cleanup()
