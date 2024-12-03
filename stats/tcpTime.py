@@ -6,7 +6,9 @@ import os
 
 def analyze_tcp_time(filepath):
     """
-    Analyze the TCP connection times and TLS handshake times from a PCAP file.
+    Analyze the times from a PCAP file.
+
+    PCAP File should be in format: XYZ_WEB_ABC.pcap or XYZ_VIDEO_ABC.pcap
 
     Args:
         file_path (str): Path to the PCAP file.
@@ -25,6 +27,7 @@ def analyze_tcp_time(filepath):
     download_start_time = None
     download_end_time = None
     total_time = None
+    tls_version = None
 
     tls_server_hello_seq_num = 0.0
     not_encountered_fin_ack = True
@@ -35,19 +38,22 @@ def analyze_tcp_time(filepath):
                 # Parse TCP SYN for connection start
                 if (
                     "TCP" in packet
-                    and str(packet.tcp.flags_syn) == "1"
+                    and int(packet.tcp.flags_syn) == 1
                     and connection_SYN_time is None
                 ):
+                    # print(int(packet.tcp.flags_syn) ==1 )
                     connection_SYN_time = packet.sniff_time
+                    # print(connection_SYN_time)
 
                 # Parse TCP ACK for connection established
                 if (
                     "TCP" in packet
-                    and str(packet.tcp.flags_ack) == "1"
-                    and connection_SYN_time
+                    and int(packet.tcp.flags_ack) == 1
+                    and connection_SYN_time is not None
                     and connection_ACK_time is None
                 ):
                     connection_ACK_time = packet.sniff_time
+                    # print(connection_ACK_time)
 
                 # Parse TLS handshake start (Client Hello)
                 if (
@@ -64,6 +70,10 @@ def analyze_tcp_time(filepath):
                     and getattr(packet.tls, "handshake_type", None) == "2"
                 ):
                     tls_server_hello_seq_num = float(packet.tcp.nxtseq)
+                    if packet.tls.handshake_extensions_supported_version == "0x0304":
+                        tls_version = "1.3"
+                    else:
+                        tls_version = "1.2"
 
                 if (
                     "TCP" in packet
@@ -73,13 +83,23 @@ def analyze_tcp_time(filepath):
                 ):
                     tls_end_time = packet.sniff_time
 
-                if (
-                    "TLS" in packet
-                    and str(packet.tls.app_data_proto).lower()
-                    == "hypertext transfer protocol"
-                ):
-                    if download_start_time == None:
-                        download_start_time = packet.sniff_time
+                if "TLS" in packet:
+                    # Safely check for app_data_proto
+                    app_data_proto = getattr(packet.tls, "app_data_proto", None)
+                    record_opaque_type = getattr(packet.tls, "record_opaque_type", None)
+
+                    if (
+                        app_data_proto
+                        and app_data_proto.lower() == "hypertext transfer protocol"
+                    ):
+                        if download_start_time is None:
+                            download_start_time = packet.sniff_time
+
+                    if (
+                        record_opaque_type and int(record_opaque_type) == 23
+                    ):  # That dont show http
+                        if download_start_time is None:
+                            download_start_time = packet.sniff_time
 
                     if not_encountered_fin_ack:
                         download_end_time = packet.sniff_time
@@ -94,27 +114,47 @@ def analyze_tcp_time(filepath):
                 ):
                     not_encountered_fin_ack = False
 
-                total_time = packet.frame_info.time_relative
+                total_time = packet.sniff_time
 
             except AttributeError:
                 # Skip packets that do not have expected attributes
                 continue
-        # print(dir(cap[16].tcp))
 
     finally:
         cap.close()
 
     # Safely calculate times
     if connection_SYN_time and connection_ACK_time:
-        tcp_connection_time = (connection_ACK_time - connection_SYN_time).total_seconds()
+        tcp_connection_time = connection_ACK_time - connection_SYN_time
     else:
         tcp_connection_time = None
 
-    tls_connection_time = (tls_end_time - tls_start_time).total_seconds() if tls_start_time and tls_end_time else None
-    time_to_first_byte = (download_start_time - connection_SYN_time).total_seconds() if connection_SYN_time and download_start_time else None
-    download_time = (download_end_time - download_start_time).total_seconds() if download_start_time and download_end_time else None
-    total_connection_time = (tls_end_time - connection_SYN_time).total_seconds() if tls_end_time and connection_SYN_time else None
+    tls_connection_time = (
+        (tls_end_time - tls_start_time) if tls_start_time and tls_end_time else None
+    )
+    time_to_first_byte = (
+        (download_start_time - connection_SYN_time)
+        if connection_SYN_time and download_start_time
+        else None
+    )
+    download_time = (
+        (download_end_time - download_start_time)
+        if download_start_time and download_end_time
+        else None
+    )
+    total_connection_time = (
+        (tls_end_time - connection_SYN_time)
+        if tls_end_time and connection_SYN_time
+        else None
+    )
+    total_time = (
+        (total_time - connection_SYN_time)
+        if total_time and connection_SYN_time
+        else None
+    )
 
+    filename = os.path.basename(filepath)
+    parts = filename.split("_")
 
     # Calculate times
     results = {
@@ -124,14 +164,16 @@ def analyze_tcp_time(filepath):
         "time_to_first_byte": time_to_first_byte,
         "download_time": download_time,
         "total_time": total_time,
+        "tls_version": tls_version,
+        "workload": parts[1],
     }
 
     return results
 
 
 def write_results_to_csv(results, filepath):
-    base_filename = os.path.splitext(os.path.basename(filepath))[0]
-    csv_file = f"assets/csvs/tcp_log_{base_filename}.csv"
+    # base_filename = os.path.splitext(os.path.basename(filepath))[0]
+    csv_file = f"assets/csvs/tcp_data_log.csv"
     path = os.path.dirname(csv_file)
     os.makedirs(path, exist_ok=True)
     # Check if the CSV file exists to determine if we need to write headers
@@ -146,11 +188,13 @@ def write_results_to_csv(results, filepath):
             csv_writer.writerow(
                 [
                     "TCP Connection Time",
-                    "TLS Connection Time",
+                    "TLS Handshake Time",
                     "Total Connection Time",
                     "Time to First Byte",
                     "Download Time",
                     "Total Time",
+                    "TLS Version",
+                    "Workload",
                 ]
             )
 
@@ -163,6 +207,8 @@ def write_results_to_csv(results, filepath):
                 results["time_to_first_byte"],
                 results["download_time"],
                 results["total_time"],
+                results["tls_version"],
+                results["workload"],
             ]
         )
 
@@ -182,13 +228,14 @@ def main():
 
     print("Analysis Results:")
     print(f"TCP Connection Time: {results['tcp_connection_time']} seconds")
-    print(f"TLS Connection Time: {results['tls_connection_time']} seconds")
+    print(f"TLS Handshake Time: {results['tls_connection_time']} seconds")
     print(f"Total Connection Time: {results['total_connection_time']} seconds")
     print(f"Time to First Byte: {results['time_to_first_byte']} seconds")
     print(f"Download Time: {results['download_time']} seconds")
     print(f"Total Time: {results['total_time']} seconds")
+    print(f"TLS Version: {results['tls_version']}")
+    print(f"Workload: {results['workload']}")
+
 
 if __name__ == "__main__":
     main()
-
-
