@@ -62,6 +62,8 @@ iterations=1
 # Default region
 region="default"
 
+echo "Arguments: $# $@"
+
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
