@@ -12,6 +12,7 @@ import csv
 import sys
 import os
 
+
 # Load the PCAP file
 def analyze_quic_time(filepath):
 
@@ -44,6 +45,10 @@ def analyze_quic_time(filepath):
 
     cap.close()
 
+    filename = os.path.basename(filepath)
+    parts = filename.split("_")
+    workload_type = parts[1]
+
     total_time = last_payload - first_initial
     time_to_first_byte = first_payload - first_initial
     download_time = last_payload - first_payload
@@ -54,6 +59,7 @@ def analyze_quic_time(filepath):
         "time_to_first_byte": time_to_first_byte,
         "download_time": download_time,
         "connection_time": connection_time,
+        "workload": workload_type,
     }
 
     print("first payload :", first_payload)
@@ -66,6 +72,7 @@ def analyze_quic_time(filepath):
     print(f"Time to first Byte: {time_to_first_byte}")
     print(f"Download Time: {download_time}")
     print(f"Connection Time: {connection_time}")
+    print(f"Workload: {workload_type}")
     print()
 
     return results
@@ -73,13 +80,12 @@ def analyze_quic_time(filepath):
 
 def write_metrics_to_csv(
     results,
-    filepath
 ):
-    base_filename = os.path.splitext(os.path.basename(filepath))[0]
-    csv_file = f"assets/csvs/quic_log_{base_filename}.csv"
+    # base_filename = os.path.splitext(os.path.basename(filepath))[0]
+    csv_file = f"assets/csvs/quic_data_log.csv"
     path = os.path.dirname(csv_file)
     os.makedirs(path, exist_ok=True)
-    
+
     # Check if the CSV file exists to determine if we need to write headers
     file_exists = os.path.exists(csv_file)
 
@@ -95,6 +101,7 @@ def write_metrics_to_csv(
                     "Time to First Byte",
                     "Download Time",
                     "Total Time",
+                    "Workload",
                 ]
             )
 
@@ -105,6 +112,7 @@ def write_metrics_to_csv(
                 results["time_to_first_byte"],
                 results["download_time"],
                 results["total_time"],
+                results["workload"],
             ]
         )
 
@@ -117,7 +125,7 @@ def main():
         sys.exit(1)
     filepath = sys.argv[1]
     results = analyze_quic_time(filepath)
-    write_metrics_to_csv(results, filepath)
+    write_metrics_to_csv(results)
 
 
 if __name__ == "__main__":
