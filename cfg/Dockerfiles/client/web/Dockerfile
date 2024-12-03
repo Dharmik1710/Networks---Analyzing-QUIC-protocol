@@ -13,7 +13,7 @@ RUN apk add --no-cache \
     busybox-extras \
     iperf3
 
-RUN mkdir -p /CURL_logs /QUIC_captures /TCP_captures
+RUN mkdir -p /CURL_logs /pcaps/web/quic /pcaps/web/tcp /pcaps/video/quic /pcaps/video/tcp 
 COPY curl_request.sh /curl_request.sh
 RUN chmod +x /curl_request.sh
 # ENTRYPOINT ["/bin/bash", "/curl_request.sh"]
