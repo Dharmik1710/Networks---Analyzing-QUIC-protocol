@@ -144,10 +144,10 @@ if __name__ == "__main__":
 
     if args.region:
         if args.region == 'India':
-            args.bw_client = 10
-            args.latency_client = "200ms"
+            args.bw_client = 20
+            args.latency_client = "80ms"
         elif args.region == 'Germany':
-            args.bw_client = 50
+            args.bw_client = 500
             args.latency_client = "20ms"
     else: 
         args.bw_client = 20
