@@ -22,7 +22,7 @@ def setup_network(bw_client=20, latency_client="10ms"):
     r1 = net.addHost("r1", ip="10.0.0.254")
 
     info("*** Adding clients\n")
-    h1 = net.addDocker("h1", ip="10.0.0.1/24", dimage="host-web-image", volumes=[f"{os.getcwd()}/../stats/assets/pcaps:/pcaps:rw"]) #, dcmd="/bin/bash ./curl_request.sh")
+    h1 = net.addDocker("h1", ip="10.0.0.1/24", dimage="host-web-image", volumes=[f"{os.getcwd()}/../stats/assets/pcaps:/pcaps:rw"], dcmd="/bin/bash curl_request.sh")
     h2 = net.addDocker("h2", ip="10.0.0.2/24", dimage="host-image")
 
     info("*** Adding servers\n")
