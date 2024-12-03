@@ -46,7 +46,7 @@
 #!/bin/bash
 
 # Number of iterations
-iterations=5
+iterations=1
 
 # TCPDump capture options
 # interface="eth0"    # Adjust to the correct network interface
@@ -57,7 +57,7 @@ do
   echo "Iteration $i"
 
   # Define the capture file name with the iteration number
-  capture_file="/QUIC_captures/QUIC_WEB_capture$i.pcap"
+  capture_file="/pcaps/web/quic/QUIC_WEB_capture$i_{content}_{latency__bandwidth}.pcap"
 
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
@@ -89,7 +89,7 @@ do
   echo "Iteration $i"
 
   # Define the capture file name with the iteration number
-  capture_file="/TCP_captures/TCP_WEB_capture$i.pcap"
+  capture_file="/pcaps/web/tcp/TCP_WEB_capture$i.pcap"
 
   available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
@@ -118,5 +118,70 @@ do
 done
 
 
+# File size array
+file_sizes=("1mb" "10mb" "50mb" "100mb")
+
+# QUIC Video Workload
+for size in "${file_sizes[@]}"; do
+  for ((i=1; i<=iterations; i++)); do
+    echo "QUIC Video Workload - File milkyway${size}.mp4 - Iteration $i"
+
+    capture_file="/pcaps/video/quic/QUIC_VIDEO_capture_${size}_$i_{latency__bandwidth}.pcap"
+
+    available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+
+    # Start tcpdump in the background to capture packets to the pcap file
+    tcpdump -i any port "$available_port" -w "$capture_file" &
+    tcpdump_pid=$!
+    echo "tcpdump pid: $tcpdump_pid"
+    echo "available port: $available_port"
+
+    sleep 2
+
+    # Send the curl request (QUIC) for the video file
+    curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.mp4" >> /CURL_logs/QUIC_VIDEO_logs.txt 2>&1
+
+    # Wait for the curl request to complete
+    sleep 5
+    echo "After wait"
+
+    # Stop tcpdump after the curl request completes
+    kill -SIGINT $tcpdump_pid
+
+    sleep 5
+  done
+done
+
+# TCP Video Workload
+for size in "${file_sizes[@]}"; do
+  for ((i=1; i<=iterations; i++)); do
+    echo "TCP Video Workload - File milkyway${size}.mp4 - Iteration $i"
+
+    # Define the capture file name with the iteration number
+    capture_file="/pcaps/video/tcp/TCP_VIDEO_capture_${size}_$i.pcap"
+
+    available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+
+    # Start tcpdump in the background to capture packets to the pcap file
+    tcpdump -i any port "$available_port" -w "$capture_file" &
+    tcpdump_pid=$!
+    echo "tcpdump pid: $tcpdump_pid"
+    echo "available port: $available_port"
+
+    sleep 2
+
+    # Send the curl request (TCP) for the video file
+    curl -I -v --insecure --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.mp4" >> /CURL_logs/TCP_VIDEO_logs.txt 2>&1
+
+    # Wait for the curl request to complete
+    sleep 5
+    echo "After wait"
+
+    # Stop tcpdump after the curl request completes
+    kill -SIGINT $tcpdump_pid
+
+    sleep 5
+  done
+done
 
 echo "Completed $iterations iterations"
