@@ -45,11 +45,13 @@ def setup_network(bw_client=20, latency_client="80ms", region="India"):
 
 
     h1 = net.addDocker("h1", ip="10.0.0.1/24", dimage="host-web-image", volumes=[f"{os.getcwd()}/../stats/assets/pcaps:/pcaps:rw"]
-    # , dcmd=f"/bin/bash curl_request.sh --region {region} --iterations 3"
+    , dcmd=f"/bin/bash curl_request.sh --region {region} --iterations 100"
     )
     track_container("h1")
     
-    h2 = net.addDocker("h2", ip="10.0.0.2/24", dimage="host-image")
+    h2 = net.addDocker("h2", ip="10.0.0.2/24", dimage="host-art-image", volumes=[f"{os.getcwd()}/../stats/assets/artillery_results:/artillery_results:rw"]
+    #, dcmd="/bin/bash artillery run --insecure /config.yaml --output /artillery_results/results.json"
+    )
     track_container("h2")
 
     info("*** Adding servers\n")
