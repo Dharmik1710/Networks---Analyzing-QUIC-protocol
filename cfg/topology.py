@@ -27,7 +27,7 @@ def cleanup():
     os.system("mn -c 2>/dev/null || true")
 
 
-def setup_network(bw_client=20, latency_client="10ms"):
+def setup_network(bw_client=20, latency_client="80ms", region="India"):
     net = Containernet(controller=Controller)
 
     info("*** Adding controller\n")
@@ -36,6 +36,7 @@ def setup_network(bw_client=20, latency_client="10ms"):
     info("*** Adding switches\n")
     s1 = net.addSwitch("s1")  # Client switch
     s2 = net.addSwitch("s2")  # Server switch
+    s3 = net.addSwitch('s3')  # internal network switch
 
     info("*** Adding router\n")
     r1 = net.addHost("r1", ip="10.0.0.254")
@@ -44,7 +45,7 @@ def setup_network(bw_client=20, latency_client="10ms"):
 
 
     h1 = net.addDocker("h1", ip="10.0.0.1/24", dimage="host-web-image", volumes=[f"{os.getcwd()}/../stats/assets/pcaps:/pcaps:rw"]
-    # , dcmd="/bin/bash curl_request.sh"
+    # , dcmd=f"/bin/bash curl_request.sh --region {region} --iterations 3"
     )
     track_container("h1")
     
@@ -64,10 +65,10 @@ def setup_network(bw_client=20, latency_client="10ms"):
     )
     track_container("srv1-proxy")
 
-    srv1_web = net.addDocker("srv1-web", ip="192.168.1.2/24", dimage="web-server-image")
+    srv1_web = net.addDocker("srv1-web", ip="192.168.1.2/24", dimage="web-server-image", dcmd="node /usr/src/app/app.js")
     track_container("srv1-web")
 
-    srv1_video = net.addDocker("srv1-video", ip="192.168.1.3/24", dimage="video-server-image")
+    srv1_video = net.addDocker("srv1-video", ip="192.168.1.3/24", dimage="video-server-image", dcmd="node /usr/src/app/app.js")
     track_container("srv1-video")
 
     # Server 2
@@ -81,32 +82,33 @@ def setup_network(bw_client=20, latency_client="10ms"):
     )
     track_container("srv2-proxy")
 
-    srv2_web = net.addDocker("srv2-web", ip="192.168.2.2/24", dimage="web-server-image")
+    srv2_web = net.addDocker("srv2-web", ip="192.168.2.2/24", dimage="web-server-image", dcmd="node /usr/src/app/app.js")
     track_container("srv2-web")
 
-    srv2_video = net.addDocker("srv2-video", ip="192.168.2.3/24", dimage="video-server-image")
+    srv2_video = net.addDocker("srv2-video", ip="192.168.2.3/24", dimage="video-server-image", dcmd="node /usr/src/app/app.js")
     track_container("srv2-video")
 
     info("*** Creating links\n")
 
     # Client links
-    net.addLink(h1, s1, cls=TCLink, bw=bw_client, delay=latency_client)
-    net.addLink(h2, s1, cls=TCLink, bw=bw_client, delay=latency_client)
-    net.addLink(s1, r1, cls=TCLink, bw=bw_client, delay=latency_client)
+    net.addLink(h1, s1, cls=TCLink, bw=bw_client, delay=latency_client, use_htb=True, params1={'quantum': 1500})
+    net.addLink(h2, s1, cls=TCLink, bw=bw_client, delay=latency_client, use_htb=True, params1={'quantum': 1500})
+    net.addLink(s1, r1, cls=TCLink, bw=bw_client, delay=latency_client, use_htb=True, params1={'quantum': 1500})
 
-    # Server 1 internal network
-    net.addLink(srv1_proxy, srv1_web)
-    net.addLink(srv1_proxy, srv1_video)
-
+    # Connect srv1-proxy, srv1-web, and srv1-video to s3
+    net.addLink(srv1_proxy, s3, use_htb=True, params1={'quantum': 1500})
+    net.addLink(srv1_web, s3, use_htb=True, params1={'quantum': 1500})
+    net.addLink(srv1_video, s3, use_htb=True, params1={'quantum': 1500})
+    
     # Server 2 internal network
-    net.addLink(srv2_proxy, srv2_web)
-    net.addLink(srv2_proxy, srv2_video)
+    net.addLink(srv2_proxy, srv2_web, use_htb=True, params1={'quantum': 1500})
+    net.addLink(srv2_proxy, srv2_video, use_htb=True, params1={'quantum': 1500})
 
     # Proxy public links
-    net.addLink(srv1_proxy, s2, cls=TCLink, bw=500, delay="5ms")
-    net.addLink(srv2_proxy, s2, cls=TCLink, bw=500, delay="5ms")
+    net.addLink(srv1_proxy, s2, cls=TCLink, bw=500, delay="5ms", use_htb=True, params1={'quantum': 1500})
+    net.addLink(srv2_proxy, s2, cls=TCLink, bw=500, delay="5ms", use_htb=True, params1={'quantum': 1500})
 
-    net.addLink(r1, s2, cls=TCLink, bw=1000, delay="1ms")
+    net.addLink(r1, s2, cls=TCLink, bw=1000, delay="1ms", use_htb=True, params1={'quantum': 1500})
 
     info("*** Starting network\n")
     net.start()
@@ -121,6 +123,19 @@ def setup_network(bw_client=20, latency_client="10ms"):
     h2.cmd("ip route add default via 10.0.0.254")
     srv1_proxy.cmd("ip route add default via 10.0.1.254")
     srv2_proxy.cmd("ip route add default via 10.0.1.254")
+    
+    # Assign IP addresses
+    info("*** Configuring Server 1 internal network\n")
+
+    # Enable IP forwarding on srv1-proxy
+    srv1_proxy.cmd("sysctl -w net.ipv4.ip_forward=1")
+    srv1_proxy.cmd("ifconfig srv1_proxy-eth1 192.168.1.1/24")
+    srv1_web.cmd("ifconfig srv1_web-eth0 192.168.1.2/24")
+    srv1_video.cmd("ifconfig srv1_video-eth0 192.168.1.3/24")
+
+    # Set default routes
+    srv1_web.cmd("ip route add default via 192.168.1.1")
+    srv1_video.cmd("ip route add default via 192.168.1.1")
 
     info("*** Running CLI\n")
     CLI(net)
@@ -138,10 +153,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Mininet Topology for TCP and QUIC Testing')
     parser.add_argument('--bw_client', type=float, default=20, help='Bandwidth for client network in Mbps')
     parser.add_argument('--latency_client', type=str, default='10ms', help='Latency for client network')
+    parser.add_argument('--region', type=str, choices=['India', 'Germany'], help='Region for client network settings')
+
     args = parser.parse_args()
 
+    if args.region:
+        if args.region == 'India':
+            args.bw_client = 20
+            args.latency_client = "80ms"
+        elif args.region == 'Germany':
+            args.bw_client = 500
+            args.latency_client = "20ms"
+    else: 
+        args.bw_client = 20
+        args.latency_client = "10ms"
+
+
     try:
-        setup_network(bw_client=args.bw_client, latency_client=args.latency_client)
+        setup_network(bw_client=args.bw_client, latency_client=args.latency_client, region=args.region)
     except Exception as e:
         info(f"*** Error: {e}\n")
     finally:
