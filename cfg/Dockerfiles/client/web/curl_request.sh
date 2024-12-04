@@ -82,24 +82,27 @@ echo "Region: $region"
 contents=("index.html" "api/sample.json" "docs/sample.csv" "docs/sample.pdf" "images/sample.jpg" "images/sample.png")
 
 # QUIC Web Workload
-for content in "${contents[@]}"; do
-  for ((i=1; i<=iterations; i++)); do
+for ((i=1; i<=iterations; i++)); do
+  for content in "${contents[@]}"; do
     echo "QUIC Web Workload - Content $content - Iteration $i"
 
-    capture_file="/pcaps/web/quic/QUIC_WEB_${content}_${region}_capture$i.pcap"
+    content_name="${content##*/}"
+ 
+    # Construct the capture file path
+    capture_file="/pcaps/web/quic/QUIC_WEB_${content_name}_${region}_capture$i.pcap"
 
-    available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+    # available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
     # Start tcpdump in the background to capture packets to the pcap file
-    tcpdump -i any port "$available_port" -w "$capture_file" &
+    tcpdump -i any -w "$capture_file" &
     tcpdump_pid=$!
     echo "tcpdump pid: $tcpdump_pid"
-    echo "available port: $available_port"
+    # echo "available port: $available_port"
 
     sleep 2
 
     # Send the curl request (QUIC)
-    curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/web/$content" >> /CURL_logs/QUIC_WEB_logs.txt 2>&1
+    curl -v --insecure --http3 "https://172.17.0.4:8443/web/$content" >> /CURL_logs/QUIC_WEB_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
@@ -113,24 +116,25 @@ for content in "${contents[@]}"; do
 done
 
 # TCP Web Workload
-for content in "${contents[@]}"; do
-  for ((i=1; i<=iterations; i++)); do
+for ((i=1; i<=iterations; i++)); do
+  for content in "${contents[@]}"; do
     echo "TCP Web Workload - Content $content - Iteration $i"
 
-    capture_file="/pcaps/web/tcp/TCP_WEB_${content}_${region}_capture$i.pcap"
-
-    available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+    content_name="${content##*/}"
+    capture_file="/pcaps/web/tcp/TCP_WEB_${content_name}_${region}_capture$i.pcap"
+    
+    # available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
     # Start tcpdump in the background to capture packets to the pcap file
-    tcpdump -i any port "$available_port" -w "$capture_file" &
+    tcpdump -i any -w "$capture_file" &
     tcpdump_pid=$!
     echo "tcpdump pid: $tcpdump_pid"
-    echo "available port: $available_port"
+    # echo "available port: $available_port"
 
     sleep 2
 
     # Send the curl request (TCP)
-    curl -I -v --insecure --local-port $available_port "https://172.17.0.4:8443/web/$content" >> /CURL_logs/TCP_WEB_logs.txt 2>&1
+    curl -v --insecure "https://172.17.0.4:8443/web/$content" >> /CURL_logs/TCP_WEB_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
@@ -148,24 +152,24 @@ done
 file_sizes=("1mb" "10mb" "50mb" "100mb")
 
 # QUIC Video Workload
-for size in "${file_sizes[@]}"; do
-  for ((i=1; i<=iterations; i++)); do
+for ((i=1; i<=iterations-65; i++)); do
+  for size in "${file_sizes[@]}"; do
     echo "QUIC Video Workload - File milkyway${size}.MP4 - Iteration $i"
 
     capture_file="/pcaps/video/quic/QUIC_VIDEO_${size}_${region}_capture$i.pcap"
 
-    available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+    # available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
     # Start tcpdump in the background to capture packets to the pcap file
-    tcpdump -i any port "$available_port" -w "$capture_file" &
+    tcpdump -i any -w "$capture_file" &
     tcpdump_pid=$!
     echo "tcpdump pid: $tcpdump_pid"
-    echo "available port: $available_port"
+    # echo "available port: $available_port"
 
     sleep 2
 
     # Send the curl request (QUIC) for the video file
-    curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.MP4" >> /CURL_logs/QUIC_VIDEO_logs.txt 2>&1
+    curl -v --insecure --http3 "https://172.17.0.4:8443/video/milkyway${size}.MP4" >> /CURL_logs/QUIC_VIDEO_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
@@ -179,25 +183,25 @@ for size in "${file_sizes[@]}"; do
 done
 
 # TCP Video Workload
-for size in "${file_sizes[@]}"; do
-  for ((i=1; i<=iterations; i++)); do
+for ((i=1; i<=iterations-65; i++)); do
+  for size in "${file_sizes[@]}"; do
     echo "TCP Video Workload - File milkyway${size}.MP4 - Iteration $i"
 
     # Define the capture file name with the iteration number
     capture_file="/pcaps/video/tcp/TCP_VIDEO_${size}_${region}_capture$i.pcap"
 
-    available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
+    # available_port=$(comm -23 <(seq 49152 65535 | sort) <(ss -Htan | awk '{print $4}' | cut -d':' -f2 | sort -u) | shuf | head -n 1)
 
     # Start tcpdump in the background to capture packets to the pcap file
-    tcpdump -i any port "$available_port" -w "$capture_file" &
+    tcpdump -i any -w "$capture_file" &
     tcpdump_pid=$!
     echo "tcpdump pid: $tcpdump_pid"
-    echo "available port: $available_port"
+    # echo "available port: $available_port"
 
     sleep 2
 
     # Send the curl request (TCP) for the video file
-    curl -I -v --insecure --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.MP4" >> /CURL_logs/TCP_VIDEO_logs.txt 2>&1
+    curl -v --insecure "https://172.17.0.4:8443/video/milkyway${size}.MP4" >> /CURL_logs/TCP_VIDEO_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
