@@ -4,6 +4,12 @@ import sys
 import os
 
 
+import pyshark
+import csv
+import sys
+import os
+
+
 def analyze_tcp_time(filepath):
     """
     Analyze the times from a PCAP file.
@@ -11,13 +17,14 @@ def analyze_tcp_time(filepath):
     PCAP File should be in format: XYZ_WEB_ABC.pcap or XYZ_VIDEO_ABC.pcap
 
     Args:
-        file_path (str): Path to the PCAP file.
+        filepath (str): Path to the PCAP file.
 
     Returns:
         dict: Dictionary containing connection and handshake times.
     """
     # Load the PCAP file with a TCP filter
-    cap = pyshark.FileCapture(filepath, display_filter="tcp")
+    cap = pyshark.FileCapture(filepath, display_filter="tcp", keep_packets=False, tshark_timeout=30)
+
 
     # Initialize variables
     connection_SYN_time = None
@@ -30,7 +37,6 @@ def analyze_tcp_time(filepath):
     tls_version = None
 
     tls_server_hello_seq_num = 0.0
-    not_encountered_fin_ack = True
 
     try:
         for packet in cap:
@@ -38,22 +44,19 @@ def analyze_tcp_time(filepath):
                 # Parse TCP SYN for connection start
                 if (
                     "TCP" in packet
-                    and int(packet.tcp.flags_syn) == 1
+                    and packet.tcp.flags_syn == "1"
                     and connection_SYN_time is None
                 ):
-                    # print(int(packet.tcp.flags_syn) ==1 )
                     connection_SYN_time = packet.sniff_time
-                    # print(connection_SYN_time)
 
                 # Parse TCP ACK for connection established
                 if (
                     "TCP" in packet
-                    and int(packet.tcp.flags_ack) == 1
+                    and packet.tcp.flags_ack == "1"
                     and connection_SYN_time is not None
                     and connection_ACK_time is None
                 ):
                     connection_ACK_time = packet.sniff_time
-                    # print(connection_ACK_time)
 
                 # Parse TLS handshake start (Client Hello)
                 if (
@@ -97,28 +100,28 @@ def analyze_tcp_time(filepath):
 
                     if (
                         record_opaque_type and int(record_opaque_type) == 23
-                    ):  # That dont show http
+                    ):  # That doesn't show http
                         if download_start_time is None:
                             download_start_time = packet.sniff_time
 
-                    if not_encountered_fin_ack:
-                        download_end_time = packet.sniff_time
+                    download_end_time = packet.sniff_time  # Update continuously
 
-                # if ("TLS" in packet and not_encountered_fin_ack):
-                #     download_end_time = packet.sniff_time
-
+                # Parse TCP FIN for connection end
                 if (
                     "TCP" in packet
                     and packet.tcp.flags_fin == "1"
                     and packet.tcp.flags_ack == "1"
                 ):
-                    not_encountered_fin_ack = False
+                    download_end_time = packet.sniff_time
 
-                total_time = packet.sniff_time
+                total_time = packet.sniff_time  # Update continuously
 
             except AttributeError:
                 # Skip packets that do not have expected attributes
                 continue
+
+    except StopIteration:
+        print("Reached end of PCAP file.")
 
     finally:
         cap.close()
@@ -155,9 +158,9 @@ def analyze_tcp_time(filepath):
 
     filename = os.path.basename(filepath)
     parts = filename.split("_")
-    workload=parts[1]
-    content=parts[2]
-    region=parts[3]
+    workload = parts[1]
+    content = parts[2]
+    region = parts[3]
 
     # Calculate times
     results = {
@@ -170,10 +173,12 @@ def analyze_tcp_time(filepath):
         "tls_version": tls_version,
         "workload": workload,
         "content": content,
-        "region":region
+        "region": region,
     }
 
     return results
+
+
 
 
 def write_results_to_csv(results):
