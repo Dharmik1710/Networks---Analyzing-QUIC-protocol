@@ -1,0 +1,79 @@
+config:
+  # This is a test server run by team Artillery
+  # It's designed to be highly scalable
+  # target: http://asciiart.artillery.io:8080
+  target: https://172.17.0.4:8443/
+  tls:
+    rejectUnauthorized: false
+  phases:
+    - duration: 30
+      arrivalRate: 1
+      rampTo: 3
+      name: Warm up phase
+    - duration: 300
+      arrivalRate: 2
+      rampTo: 4
+      name: Ramp up load
+    - duration: 600
+      arrivalRate: 3
+      rampTo: 8
+      name: Spike phase
+    - duration: 15
+      arrivalRate: 1
+      rampTo: 5
+      name: Warm up phase
+    - duration: 3000
+      arrivalRate: 2
+      rampTo: 15
+      name: Ramp up load
+    - duration: 15
+      arrivalRate: 1
+      rampTo: 10
+      name: Warm up phase
+    - duration: 3000
+      arrivalRate: 5
+      rampTo: 12
+      name: Ramp up load
+    - duration: 4000
+      arrivalRate: 1
+      rampTo: 17
+      name: Spike phase
+  # Load & configure a couple of useful plugins
+  # https://docs.art/reference/extensions
+  plugins:
+    ensure: {}
+    apdex: {}
+    metrics-by-endpoint: {}
+  apdex:
+    threshold: 100
+  ensure:
+    thresholds:
+      - http.response_time.p99: 99
+      - http.response_time.p95: 90
+scenarios:
+  - flow:
+      - loop:
+          # - get:
+          #     url: '{{ randomChoice(["/web/index.html", "/web/api/sample.json", "/web/docs/sample.csv", "/web/images/sample.jpg", "/web/docs/sample.pdf", "/video/milkyway1mb.MP4", "/video/milkyway10mb.MP4"]) }}'
+          # - think: '{{ randomInt(1, 5) }}'
+          - get:
+              url: "/web/index.html"
+          - get:
+              url: "/web/api/sample.json"
+          - get:
+              url: "/web/docs/sample.csv"
+          - get:
+              url: "/web/images/sample.jpg"
+          - get:
+              url: "/web/docs/sample.pdf"
+          - get:
+              url: "/video/milkyway100mb.MP4"
+          - get:
+              url: "/video/milkyway10mb.MP4"
+          - get:
+              url: "/video/milkyway50mb.MP4"
+          - get:
+              url: "/video/milkyway1mb.MP4"
+          - get:
+              url: "/video/milkyway10mb.MP4"
+        count: 5

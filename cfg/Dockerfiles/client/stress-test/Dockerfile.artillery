@@ -1,0 +1,22 @@
+# Use Artillery's official Docker image as the base
+FROM artilleryio/artillery:latest
+ 
+RUN apk add --no-cache \
+    bash \
+    iproute2 \
+    iputils \
+    net-tools \
+    tcpdump \
+    curl \
+    wget 
+ 
+# Copy your Artillery YAML file to the root directory
+COPY artillery-traffic.yaml /config.yaml
+
+# Install Artillery globally
+RUN npm install -g artillery
+
+RUN mkdir -p /artillery_results
+ 
+# Set the default command to run the Artillery test
+# CMD ["run","--insecure", "/config.yaml"]
