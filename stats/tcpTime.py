@@ -35,84 +35,81 @@ def analyze_tcp_time(filepath):
     try:
         for packet in cap:
             try:
-                # Parse TCP SYN for connection start
-                if (
-                    "TCP" in packet
-                    and int(packet.tcp.flags_syn) == 1
-                    and connection_SYN_time is None
-                ):
-                    # print(int(packet.tcp.flags_syn) ==1 )
-                    connection_SYN_time = packet.sniff_time
-                    # print(connection_SYN_time)
 
-                # Parse TCP ACK for connection established
-                if (
-                    "TCP" in packet
-                    and int(packet.tcp.flags_ack) == 1
-                    and connection_SYN_time is not None
-                    and connection_ACK_time is None
-                ):
-                    connection_ACK_time = packet.sniff_time
-                    # print(connection_ACK_time)
+                # print(dir(cap[0].tcp))
+                # print(cap[0].tcp.flags_syn == "True")
+                # break
+                # Parse TCP SYN for connection start
+                if "TCP" in packet:
+                    if packet.tcp.flags_syn == "True" and connection_SYN_time is None:
+                        # print(int(packet.tcp.flags_syn) ==1 )
+                        connection_SYN_time = packet.sniff_time
+                        print(connection_SYN_time)
+                        # break
+
+                    # Parse TCP ACK for connection established
+                    if (
+                        (packet.tcp.flags_ack) == "True"
+                        and connection_SYN_time is not None
+                        and connection_ACK_time is None
+                    ):
+                        connection_ACK_time = packet.sniff_time
+                        # print(connection_ACK_time)
+
+                    if (
+                        tls_end_time is None
+                        and float(packet.tcp.ack) == float(tls_server_hello_seq_num)
+                        and tls_server_hello_seq_num != 0.0
+                    ):
+                        tls_end_time = packet.sniff_time
+
+                    if packet.tcp.flags_fin == "1" and packet.tcp.flags_ack == "1":
+                        not_encountered_fin_ack = False
 
                 # Parse TLS handshake start (Client Hello)
-                if (
-                    "TLS" in packet
-                    and tls_start_time is None
-                    and getattr(packet.tls, "handshake_type", None) == "1"
-                ):
-                    tls_start_time = packet.sniff_time
-
-                # Parse TLS handshake end (Server Hello)
-                if (
-                    "TLS" in packet
-                    and tls_end_time is None
-                    and getattr(packet.tls, "handshake_type", None) == "2"
-                ):
-                    tls_server_hello_seq_num = float(packet.tcp.nxtseq)
-                    if packet.tls.handshake_extensions_supported_version == "0x0304":
-                        tls_version = "1.3"
-                    else:
-                        tls_version = "1.2"
-
-                if (
-                    "TCP" in packet
-                    and tls_end_time is None
-                    and float(packet.tcp.ack) == float(tls_server_hello_seq_num)
-                    and tls_server_hello_seq_num != 0.0
-                ):
-                    tls_end_time = packet.sniff_time
-
                 if "TLS" in packet:
-                    # Safely check for app_data_proto
-                    app_data_proto = getattr(packet.tls, "app_data_proto", None)
-                    record_opaque_type = getattr(packet.tls, "record_opaque_type", None)
-
                     if (
-                        app_data_proto
-                        and app_data_proto.lower() == "hypertext transfer protocol"
+                        
+                         tls_start_time is None
+                        and getattr(packet.tls, "handshake_type", None) == "1"
                     ):
-                        if download_start_time is None:
-                            download_start_time = packet.sniff_time
-
+                        tls_start_time = packet.sniff_time
+    
+                    # Parse TLS handshake end (Server Hello)
                     if (
-                        record_opaque_type and int(record_opaque_type) == 23
-                    ):  # That dont show http
-                        if download_start_time is None:
-                            download_start_time = packet.sniff_time
-
-                    if not_encountered_fin_ack:
-                        download_end_time = packet.sniff_time
+                        
+                         tls_end_time is None
+                        and getattr(packet.tls, "handshake_type", None) == "2"
+                    ):
+                        tls_server_hello_seq_num = float(packet.tcp.nxtseq)
+                        if packet.tls.handshake_extensions_supported_version == "0x0304":
+                            tls_version = "1.3"
+                        else:
+                            tls_version = "1.2"
+    
+                    if "TLS" in packet:
+                        # Safely check for app_data_proto
+                        app_data_proto = getattr(packet.tls, "app_data_proto", None)
+                        record_opaque_type = getattr(packet.tls, "record_opaque_type", None)
+    
+                        if (
+                            app_data_proto
+                            and app_data_proto.lower() == "hypertext transfer protocol"
+                        ):
+                            if download_start_time is None:
+                                download_start_time = packet.sniff_time
+    
+                        if (
+                            record_opaque_type and int(record_opaque_type) == 23
+                        ):  # That dont show http
+                            if download_start_time is None:
+                                download_start_time = packet.sniff_time
+    
+                        if not_encountered_fin_ack:
+                            download_end_time = packet.sniff_time
 
                 # if ("TLS" in packet and not_encountered_fin_ack):
                 #     download_end_time = packet.sniff_time
-
-                if (
-                    "TCP" in packet
-                    and packet.tcp.flags_fin == "1"
-                    and packet.tcp.flags_ack == "1"
-                ):
-                    not_encountered_fin_ack = False
 
                 total_time = packet.sniff_time
 
@@ -122,6 +119,8 @@ def analyze_tcp_time(filepath):
 
     finally:
         cap.close()
+
+    # print(dir(cap[0]))
 
     # Safely calculate times
     if connection_SYN_time and connection_ACK_time:
@@ -155,9 +154,9 @@ def analyze_tcp_time(filepath):
 
     filename = os.path.basename(filepath)
     parts = filename.split("_")
-    workload=parts[1]
-    content=parts[2]
-    region=parts[3]
+    workload = parts[1]
+    content = parts[2]
+    region = parts[3]
 
     # Calculate times
     results = {
@@ -170,7 +169,7 @@ def analyze_tcp_time(filepath):
         "tls_version": tls_version,
         "workload": workload,
         "content": content,
-        "region":region
+        "region": region,
     }
 
     return results
@@ -202,9 +201,6 @@ def write_results_to_csv(results):
                     "Download Time",
                     "Total Time",
                     "TLS Version",
-                    
-                    
-                    
                 ]
             )
 
@@ -221,10 +217,6 @@ def write_results_to_csv(results):
                 results["download_time"],
                 results["total_time"],
                 results["tls_version"],
-                
-                
-                
-
             ]
         )
 
