@@ -1,0 +1,20 @@
+FROM ubuntu:20.04
+
+# Use a fast mirror
+RUN sed -i 's|http://archive.ubuntu.com|http://mirror.math.princeton.edu/pub/ubuntu|' /etc/apt/sources.list
+
+# Install required tools
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    iproute2 \
+    iperf3 \
+    tsung \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directory for captured pcap files
+RUN mkdir -p /pcap_files
+
+# Set the working directory
+WORKDIR /pcap_files
+
+# Default command
+CMD ["bash"]

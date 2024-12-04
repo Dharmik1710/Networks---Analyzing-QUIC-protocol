@@ -27,7 +27,7 @@ def cleanup():
     os.system("mn -c 2>/dev/null || true")
 
 
-def setup_network(bw_client=20, latency_client="10ms"):
+def setup_network(bw_client=20, latency_client="80ms", region="India"):
     net = Containernet(controller=Controller)
 
     info("*** Adding controller\n")
@@ -44,7 +44,7 @@ def setup_network(bw_client=20, latency_client="10ms"):
 
 
     h1 = net.addDocker("h1", ip="10.0.0.1/24", dimage="host-web-image", volumes=[f"{os.getcwd()}/../stats/assets/pcaps:/pcaps:rw"]
-    # , dcmd="/bin/bash curl_request.sh"
+    , dcmd=f"/bin/bash curl_request.sh --region {region} --iterations 3"
     )
     track_container("h1")
     
@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
 
     try:
-        setup_network(bw_client=args.bw_client, latency_client=args.latency_client)
+        setup_network(bw_client=args.bw_client, latency_client=args.latency_client, region=args.region)
     except Exception as e:
         info(f"*** Error: {e}\n")
     finally:

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd">
+<tsung loglevel="debug" version="1.0">
+
+  <!-- Define the client machine -->
+  <clients>
+    <client host="h2" use_controller_vm="true" maxusers="100"/>
+  </clients>
+
+  <!-- Define the server under test -->
+  <servers>
+    <server host="172.17.0.4" port="8443" type="tcp"/>
+  </servers>
+
+  <!-- Global options -->
+  <options>
+    <option name="ssl" value="true"/>
+    <option name="ssl_insecure" value="true"/>
+    <option name="http_version" value="1.1"/>
+    <option name="stats_interval" value="10"/>
+  </options>
+
+  <!-- Define the load pattern -->
+  <load>
+    <arrivalphase phase="1" duration="5" unit="minute">
+      <users arrivalrate="10" unit="second"/>
+    </arrivalphase>
+  </load>
+
+  <!-- Define user sessions -->
+  <sessions>
+    <session probability="100" name="Simple Web Request" type="ts_http">
+      <request>
+        <http url="/web/index.html" method="GET"/>
+      </request>
+      <thinktime value="1" random="false"/>
+    </session>
+  </sessions>
+
+</tsung>
