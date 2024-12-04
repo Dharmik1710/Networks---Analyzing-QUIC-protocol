@@ -108,7 +108,7 @@ for content in "${contents[@]}"; do
     # Stop tcpdump after the curl request completes
     kill -SIGINT $tcpdump_pid
 
-    sleep 5
+    sleep 2
   done
 done
 
@@ -139,7 +139,7 @@ for content in "${contents[@]}"; do
     # Stop tcpdump after the curl request completes
     kill -SIGINT $tcpdump_pid
 
-    sleep 5
+    sleep 2
   done
 done
 
@@ -150,7 +150,7 @@ file_sizes=("1mb" "10mb" "50mb" "100mb")
 # QUIC Video Workload
 for size in "${file_sizes[@]}"; do
   for ((i=1; i<=iterations; i++)); do
-    echo "QUIC Video Workload - File milkyway${size}.mp4 - Iteration $i"
+    echo "QUIC Video Workload - File milkyway${size}.MP4 - Iteration $i"
 
     capture_file="/pcaps/video/quic/QUIC_VIDEO_${size}_${region}_capture$i.pcap"
 
@@ -165,7 +165,7 @@ for size in "${file_sizes[@]}"; do
     sleep 2
 
     # Send the curl request (QUIC) for the video file
-    curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.mp4" >> /CURL_logs/QUIC_VIDEO_logs.txt 2>&1
+    curl -I -v --insecure --http3 --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.MP4" >> /CURL_logs/QUIC_VIDEO_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
@@ -174,14 +174,14 @@ for size in "${file_sizes[@]}"; do
     # Stop tcpdump after the curl request completes
     kill -SIGINT $tcpdump_pid
 
-    sleep 5
+    sleep 2
   done
 done
 
 # TCP Video Workload
 for size in "${file_sizes[@]}"; do
   for ((i=1; i<=iterations; i++)); do
-    echo "TCP Video Workload - File milkyway${size}.mp4 - Iteration $i"
+    echo "TCP Video Workload - File milkyway${size}.MP4 - Iteration $i"
 
     # Define the capture file name with the iteration number
     capture_file="/pcaps/video/tcp/TCP_VIDEO_${size}_${region}_capture$i.pcap"
@@ -197,7 +197,7 @@ for size in "${file_sizes[@]}"; do
     sleep 2
 
     # Send the curl request (TCP) for the video file
-    curl -I -v --insecure --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.mp4" >> /CURL_logs/TCP_VIDEO_logs.txt 2>&1
+    curl -I -v --insecure --local-port $available_port "https://172.17.0.4:8443/video/milkyway${size}.MP4" >> /CURL_logs/TCP_VIDEO_logs.txt 2>&1
 
     # Wait for the curl request to complete
     sleep 5
@@ -206,7 +206,7 @@ for size in "${file_sizes[@]}"; do
     # Stop tcpdump after the curl request completes
     kill -SIGINT $tcpdump_pid
 
-    sleep 5
+    sleep 2
   done
 done
 
