@@ -38,22 +38,19 @@ def analyze_tcp_time(filepath):
                 # Parse TCP SYN for connection start
                 if (
                     "TCP" in packet
-                    and int(packet.tcp.flags_syn) == 1
+                    and packet.tcp.flags_syn == True  # Changed from int(packet.tcp.flags_syn) == 1
                     and connection_SYN_time is None
                 ):
-                    # print(int(packet.tcp.flags_syn) ==1 )
                     connection_SYN_time = packet.sniff_time
-                    # print(connection_SYN_time)
 
                 # Parse TCP ACK for connection established
                 if (
                     "TCP" in packet
-                    and int(packet.tcp.flags_ack) == 1
+                    and packet.tcp.flags_ack == True  # Changed from int(packet.tcp.flags_ack) == 1
                     and connection_SYN_time is not None
                     and connection_ACK_time is None
                 ):
                     connection_ACK_time = packet.sniff_time
-                    # print(connection_ACK_time)
 
                 # Parse TLS handshake start (Client Hello)
                 if (
@@ -104,9 +101,6 @@ def analyze_tcp_time(filepath):
                     if not_encountered_fin_ack:
                         download_end_time = packet.sniff_time
 
-                # if ("TLS" in packet and not_encountered_fin_ack):
-                #     download_end_time = packet.sniff_time
-
                 if (
                     "TCP" in packet
                     and packet.tcp.flags_fin == "1"
@@ -121,7 +115,9 @@ def analyze_tcp_time(filepath):
                 continue
 
     finally:
+        
         cap.close()
+        print(cap[1].tcp.flags_syn)
 
     # Safely calculate times
     if connection_SYN_time and connection_ACK_time:
@@ -172,7 +168,6 @@ def analyze_tcp_time(filepath):
 
 
 def write_results_to_csv(results, filepath):
-    # base_filename = os.path.splitext(os.path.basename(filepath))[0]
     csv_file = f"assets/csvs/tcp_data_log.csv"
     path = os.path.dirname(csv_file)
     os.makedirs(path, exist_ok=True)
@@ -215,7 +210,6 @@ def write_results_to_csv(results, filepath):
     print(f"Results have been written to {csv_file}")
 
 
-# Example usage
 def main():
     if len(sys.argv) != 2:
         print("Usage: python your_script.py <file_name>")
@@ -239,3 +233,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
