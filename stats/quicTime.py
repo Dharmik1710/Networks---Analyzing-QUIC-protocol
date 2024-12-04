@@ -48,6 +48,8 @@ def analyze_quic_time(filepath):
     filename = os.path.basename(filepath)
     parts = filename.split("_")
     workload_type = parts[1]
+    content = parts[2]
+    region = parts[3]
 
     total_time = last_payload - first_initial
     time_to_first_byte = first_payload - first_initial
@@ -60,6 +62,8 @@ def analyze_quic_time(filepath):
         "download_time": download_time,
         "connection_time": connection_time,
         "workload": workload_type,
+        "content": content,
+        "region": region,
     }
 
     print("first payload :", first_payload)
@@ -73,6 +77,8 @@ def analyze_quic_time(filepath):
     print(f"Download Time: {download_time}")
     print(f"Connection Time: {connection_time}")
     print(f"Workload: {workload_type}")
+    print(f"Content: {content}")
+    print(f"Region: {region}")
     print()
 
     return results
@@ -97,22 +103,31 @@ def write_metrics_to_csv(
         if not file_exists:
             csv_writer.writerow(
                 [
+                    "Region",
+                    "Workload",
+                    "Filename",
                     "Total Connection Time",
                     "Time to First Byte",
                     "Download Time",
                     "Total Time",
-                    "Workload",
+                    
+                    
                 ]
             )
 
         # Write the metrics to the CSV file
         csv_writer.writerow(
             [
+                results["region"],
+                results["workload"],
+                results["content"],
                 results["connection_time"],
                 results["time_to_first_byte"],
                 results["download_time"],
                 results["total_time"],
-                results["workload"],
+                
+                
+                
             ]
         )
 

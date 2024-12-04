@@ -155,6 +155,9 @@ def analyze_tcp_time(filepath):
 
     filename = os.path.basename(filepath)
     parts = filename.split("_")
+    workload=parts[1]
+    content=parts[2]
+    region=parts[3]
 
     # Calculate times
     results = {
@@ -165,13 +168,15 @@ def analyze_tcp_time(filepath):
         "download_time": download_time,
         "total_time": total_time,
         "tls_version": tls_version,
-        "workload": parts[1],
+        "workload": workload,
+        "content": content,
+        "region":region
     }
 
     return results
 
 
-def write_results_to_csv(results, filepath):
+def write_results_to_csv(results):
     # base_filename = os.path.splitext(os.path.basename(filepath))[0]
     csv_file = f"assets/csvs/tcp_data_log.csv"
     path = os.path.dirname(csv_file)
@@ -187,6 +192,9 @@ def write_results_to_csv(results, filepath):
         if not file_exists:
             csv_writer.writerow(
                 [
+                    "Region",
+                    "Workload",
+                    "Filename",
                     "TCP Connection Time",
                     "TLS Handshake Time",
                     "Total Connection Time",
@@ -194,13 +202,18 @@ def write_results_to_csv(results, filepath):
                     "Download Time",
                     "Total Time",
                     "TLS Version",
-                    "Workload",
+                    
+                    
+                    
                 ]
             )
 
         # Write the results to the CSV file
         csv_writer.writerow(
             [
+                results["region"],
+                results["workload"],
+                results["content"],
                 results["tcp_connection_time"],
                 results["tls_connection_time"],
                 results["total_connection_time"],
@@ -208,7 +221,10 @@ def write_results_to_csv(results, filepath):
                 results["download_time"],
                 results["total_time"],
                 results["tls_version"],
-                results["workload"],
+                
+                
+                
+
             ]
         )
 
@@ -224,7 +240,7 @@ def main():
     # Get the file name from the command-line arguments
     filepath = sys.argv[1]
     results = analyze_tcp_time(filepath)
-    write_results_to_csv(results, filepath)
+    write_results_to_csv(results)
 
     print("Analysis Results:")
     print(f"TCP Connection Time: {results['tcp_connection_time']} seconds")
@@ -235,6 +251,8 @@ def main():
     print(f"Total Time: {results['total_time']} seconds")
     print(f"TLS Version: {results['tls_version']}")
     print(f"Workload: {results['workload']}")
+    print(f"Content: {results['content']}")
+    print(f"Region: {results['region']}")
 
 
 if __name__ == "__main__":
