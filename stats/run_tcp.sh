@@ -1,9 +1,9 @@
 #!/bin/bash
- 
+
 # Directories containing the .pcap files
 VIDEO_PCAPS_DIR="assets/pcaps/video/tcp"
 WEB_PCAPS_DIR="assets/pcaps/web/tcp"
- 
+
 # Function to process .pcap files in a given directory
 process_pcap_files() {
     local PCAPS_DIR=$1
@@ -12,13 +12,11 @@ process_pcap_files() {
         python3 tcpTime.py "$pcap_file"
     done
 }
- 
+
 # Process video TCP .pcap files
 echo "Processing video TCP .pcap files..."
 process_pcap_files "$VIDEO_PCAPS_DIR"
- 
+
 # Process web TCP .pcap files
 echo "Processing web TCP .pcap files..."
 process_pcap_files "$WEB_PCAPS_DIR"
-has context menu
-
